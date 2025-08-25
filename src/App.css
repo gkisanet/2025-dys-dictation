@@ -43,7 +43,7 @@ h1 h2 {
 }
 
 .level-button {
-  background-color: #e16513;
+  background-color: #eec5aa;
   border: 2px solid #90caf9;
   border-radius: 8px;
   padding: 1rem;
@@ -123,7 +123,7 @@ h1 h2 {
   font-size: 1.2rem;
   border: 2px solid #7e7272;
   border-radius: 8px;
-  background-color: #4a4a53;
+  background-color: #dddddf;
   cursor: pointer;
   transition: all 0.2s;
 }
