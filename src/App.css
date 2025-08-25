@@ -26,13 +26,8 @@ body {
   flex-direction: column;
 }
 
-h1 {
+h1 h2 {
   color: #005a9c;
-  font-size: 1.8rem;
-}
-
-h2 {
-  font-size: 1.4rem;
 }
 
 /* Level Selector */
