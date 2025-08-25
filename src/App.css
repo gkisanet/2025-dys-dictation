@@ -4,23 +4,23 @@ body {
   color: #333;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   min-height: 100vh;
   margin: 0;
-  padding: 0.8rem; /* 화면 가장자리 여백 조정 */
+  padding: 0.5rem; /* 화면 가장자리 여백 조정 */
   box-sizing: border-box;
 }
 
 .app-container {
   width: 100%;
   max-width: 600px;
-  min-height: 100vh;
+  min-height: calc(100vh - 1rem); /* 패딩을 고려한 높이 */
   height: auto;
   margin: 0 auto;
   background-color: white;
   border-radius: 16px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  padding: 1.5rem;
+  padding: 1rem; /* 1.5rem에서 1rem으로 줄임 */
   text-align: center;
   display: flex;
   flex-direction: column;
@@ -198,4 +198,23 @@ h2 {
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 480px) {
+  body {
+    padding: 0.25rem;
+  }
+  
+  .app-container {
+    padding: 0.75rem;
+    border-radius: 12px;
+  }
+  
+  h1 {
+    font-size: 1.5rem;
+  }
+  
+  h2 {
+    font-size: 1.2rem;
+  }
 }
