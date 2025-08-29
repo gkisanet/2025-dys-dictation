@@ -4,16 +4,23 @@ function Question({ problem, onAnswer, onNext }) {
   const [selected, setSelected] = useState(null);
   const [isAnswered, setIsAnswered] = useState(false);
 
-  // 선택지를 랜덤하게 섞어줌
-  const options = useMemo(
-    () => [problem.correct, problem.incorrect].sort(() => Math.random() - 0.5),
-    [problem]
-  );
+  // 선택지를 랜덤하게 섞어주는 로직 (useMemo로 불필요한 재계산 방지)
+  const options = useMemo(() => {
+    // 1. 오답 배열에서 랜덤으로 하나를 선택합니다.
+    const randomIncorrect =
+      problem.incorrect[Math.floor(Math.random() * problem.incorrect.length)];
+
+    // 2. 정답과 랜덤 선택된 오답을 섞어서 선택지로 만듭니다.
+    return [problem.correct, randomIncorrect].sort(() => Math.random() - 0.5);
+  }, [problem]);
 
   // TTS 기능
   const speak = (text) => {
     // Web Speech API 지원 확인
     if ('speechSynthesis' in window) {
+      // 진행 중인 음성 출력이 있다면 취소
+      window.speechSynthesis.cancel();
+
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'ko-KR'; // 한국어 설정
       utterance.rate = 0.9; // 약간 느리게
