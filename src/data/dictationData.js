@@ -126,8 +126,8 @@ export const dictationLevels = [
       },
       {
         id: 210,
-        correct: '꽉 안아주는 날',
-        incorrect: ['꽉 아나주는 날', '꽉안아주는날', '꽉 안아주는날'],
+        correct: '꼭 안아주는 날',
+        incorrect: ['꼭 아나주는 날', '꼭안아주는날', '꼭 안아주는날'],
       },
     ],
   },
@@ -175,8 +175,8 @@ export const dictationLevels = [
       },
       {
         id: 307,
-        correct: '또박또박 달린다.',
-        incorrect: ['또박또박 달린다', '또박 또박 달린다.', '또박도박 달린다.'],
+        correct: '또박또박 말한다.',
+        incorrect: ['또박또박 말한다', '또박 또박 말한다.', '또박도박 말한다.'],
       },
       {
         id: 308,
