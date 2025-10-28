@@ -292,7 +292,7 @@ export const dictationLevels = [
       {
         id: 503,
         correct: '포기하지 않고',
-        incorrect: ['포기하지 안고', '포기하지않고', '포기하G 않고'],
+        incorrect: ['포기하지 안고', '포기하지않고', '포기하지지 않고'],
       },
       {
         id: 504,
@@ -333,8 +333,8 @@ export const dictationLevels = [
       },
       {
         id: 509,
-        correct: '넘기면 돼',
-        incorrect: ['넘기면 되', '넘기면 돼.', '넘기면 대'],
+        correct: '넘기면 돼.',
+        incorrect: ['넘기면 되', '넘기면 돼', '넘기면 대'],
       },
       {
         id: 510,
