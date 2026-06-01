@@ -88,7 +88,7 @@ function App() {
   };
 
   return (
-    <div className="app-container">
+    <div className={`app-container ${appMode === 'gugudan' ? 'gugudan-theme' : ''}`}>
       {/* 🚀 최상위 헤더 로고 터치 시 홈으로 이동 가능하도록 구성 */}
       <h1 className="main-app-title" onClick={handleGoToHome}>
         배움 놀이터 🌟
