@@ -334,3 +334,197 @@ h1 h2 {
     font-size: 1.2rem;
   }
 }
+
+/* ==========================================================================
+   통합 홈 런처 프리미엄 스타일 (Launcher & Global Layout)
+   ========================================================================== */
+
+/* 상단 통합 타이틀 */
+.main-app-title {
+  font-size: 2.2rem;
+  font-weight: 800;
+  cursor: pointer;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  display: inline-block;
+  align-self: center;
+  background: linear-gradient(135deg, #1e3a8a, #3b82f6, #4f46e5);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  transition: all 0.3s ease;
+}
+
+.main-app-title:hover {
+  transform: scale(1.03);
+  filter: drop-shadow(0 4px 8px rgba(79, 70, 229, 0.2));
+}
+
+/* 런처 컨테이너 */
+.launcher-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-grow: 1;
+  padding: 1.5rem 0.5rem;
+  animation: launcherFadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.launcher-subtitle {
+  font-size: 1.05rem;
+  color: #64748b;
+  margin-bottom: 2.5rem;
+  font-weight: 500;
+}
+
+/* 런처 카드 그리드 */
+.launcher-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  width: 100%;
+  max-width: 560px;
+}
+
+.launcher-card {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 24px;
+  padding: 2rem 1.5rem;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05),
+              0 8px 10px -6px rgba(0, 0, 0, 0.03);
+  overflow: hidden;
+}
+
+/* 배경 소프트 색상 효과 (Glassmorphism + Neon overlay) */
+.launcher-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  transition: all 0.4s ease;
+}
+
+.launcher-card.dictation::before {
+  background: linear-gradient(90deg, #10b981, #3b82f6);
+}
+
+.launcher-card.gugudan::before {
+  background: linear-gradient(90deg, #4f46e5, #ec4899);
+}
+
+.launcher-card-icon {
+  font-size: 3.5rem;
+  margin-bottom: 1.25rem;
+  transition: transform 0.4s ease;
+}
+
+.launcher-card-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 0.75rem;
+}
+
+.launcher-card-desc {
+  font-size: 0.88rem;
+  color: #64748b;
+  line-height: 1.5;
+  margin-bottom: 1.5rem;
+  flex-grow: 1;
+}
+
+.launcher-card-btn {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #3b82f6;
+  padding: 0.6rem 1.2rem;
+  border-radius: 12px;
+  background-color: #eff6ff;
+  transition: all 0.3s ease;
+}
+
+/* 카드 호버 효과 (시니어 멘토 리치 에스테틱 디테일) */
+.launcher-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.12),
+              0 10px 15px -5px rgba(0, 0, 0, 0.06);
+  border-color: rgba(165, 180, 252, 0.5);
+}
+
+.launcher-card:hover .launcher-card-icon {
+  transform: scale(1.15) rotate(5deg);
+}
+
+.launcher-card.dictation:hover {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(240, 253, 250, 0.95));
+}
+
+.launcher-card.dictation:hover .launcher-card-btn {
+  background-color: #10b981;
+  color: white;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+}
+
+.launcher-card.gugudan:hover {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(250, 245, 255, 0.95));
+}
+
+.launcher-card.gugudan:hover .launcher-card-btn {
+  background-color: #4f46e5;
+  color: white;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+}
+
+/* 서브앱 진입 보정이 들어간 컨테이너 */
+.sub-app-section {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  animation: subAppFadeIn 0.5s ease-out;
+}
+
+@keyframes launcherFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes subAppFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* 런처 모바일 반응형 대응 */
+@media (max-width: 520px) {
+  .launcher-cards {
+    grid-template-columns: 1fr;
+    gap: 1.2rem;
+  }
+  .launcher-card {
+    padding: 1.5rem 1rem;
+  }
+  .main-app-title {
+    font-size: 1.8rem;
+  }
+}

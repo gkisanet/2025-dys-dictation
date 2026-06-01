@@ -1,0 +1,721 @@
+/* ==========================================================================
+   구구단 15단 챌린지 전용 프리미엄 스타일시트 (Gugudan.css)
+   ========================================================================== */
+
+:root {
+  --gugudan-bg-primary: #0a0b1e;
+  --gugudan-bg-secondary: #121332;
+  --gugudan-accent-neon: #4f46e5;
+  --gugudan-accent-cyan: #06b6d4;
+  --gugudan-accent-pink: #ec4899;
+  --gugudan-text-main: #f8fafc;
+  --gugudan-text-muted: #94a3b8;
+  --gugudan-border-glass: rgba(255, 255, 255, 0.08);
+  --gugudan-bg-glass: rgba(18, 19, 50, 0.65);
+  --gugudan-shadow-premium: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+  --gugudan-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.gugudan-container {
+  color: var(--gugudan-text-main);
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+/* ==========================================================================
+   1. Setup Screen (GugudanSetup)
+   ========================================================================== */
+
+.setup-card {
+  background: var(--gugudan-bg-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--gugudan-border-glass);
+  border-radius: 24px;
+  padding: 2.5rem;
+  box-shadow: var(--gugudan-shadow-premium);
+  animation: cardFadeIn 0.5s ease;
+}
+
+.setup-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 2rem;
+  background: linear-gradient(135deg, var(--gugudan-accent-cyan), var(--gugudan-accent-pink));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.setup-section {
+  margin-bottom: 2rem;
+}
+
+.section-label {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--gugudan-text-muted);
+  margin-bottom: 0.75rem;
+  display: block;
+  letter-spacing: 0.05em;
+}
+
+/* 퀵 프리셋 버튼 */
+.preset-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.btn-preset {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--gugudan-border-glass);
+  color: var(--gugudan-text-main);
+  padding: 0.6rem;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: var(--gugudan-transition);
+}
+
+.btn-preset:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--gugudan-accent-cyan);
+  transform: translateY(-2px);
+}
+
+/* 단수 격자판 */
+.dan-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.5rem;
+  max-height: 180px;
+  overflow-y: auto;
+  padding: 0.5rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+/* 스크롤바 커스텀 */
+.dan-grid::-webkit-scrollbar {
+  width: 6px;
+}
+.dan-grid::-webkit-scrollbar-track {
+  background: transparent;
+}
+.dan-grid::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.dan-item {
+  position: relative;
+}
+
+.dan-checkbox {
+  position: absolute;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.dan-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--gugudan-border-glass);
+  border-radius: 10px;
+  padding: 0.75rem 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--gugudan-transition);
+}
+
+.dan-checkbox:checked + .dan-label {
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(79, 70, 229, 0.2));
+  border-color: var(--gugudan-accent-cyan);
+  color: var(--gugudan-accent-cyan);
+  box-shadow: 0 0 12px rgba(6, 182, 212, 0.25);
+  transform: scale(1.05);
+}
+
+/* 모드 선택 카드 형태 */
+.mode-selector {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.mode-option {
+  position: relative;
+}
+
+.mode-radio {
+  position: absolute;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.mode-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--gugudan-border-glass);
+  transition: var(--gugudan-transition);
+  text-align: center;
+}
+
+.mode-icon {
+  font-size: 1.8rem;
+  margin-bottom: 0.5rem;
+}
+
+.mode-name {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.mode-desc {
+  font-size: 0.75rem;
+  color: var(--gugudan-text-muted);
+}
+
+.mode-radio:checked + .mode-box {
+  background: linear-gradient(135deg, rgba(236, 72, 153, 0.15), rgba(79, 70, 229, 0.15));
+  border-color: var(--gugudan-accent-pink);
+  box-shadow: 0 0 15px rgba(236, 72, 153, 0.2);
+  transform: translateY(-2px);
+}
+
+.mode-radio:checked + .mode-box .mode-name {
+  color: var(--gugudan-accent-pink);
+}
+
+/* 문항 수 선택자 */
+.count-selector {
+  display: flex;
+  justify-content: space-around;
+  background: rgba(0, 0, 0, 0.15);
+  padding: 0.4rem;
+  border-radius: 14px;
+  border: 1px solid var(--gugudan-border-glass);
+}
+
+.count-btn {
+  background: transparent;
+  border: none;
+  color: var(--gugudan-text-muted);
+  padding: 0.5rem 1.5rem;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: var(--gugudan-transition);
+}
+
+.count-btn.active {
+  background: var(--gugudan-accent-neon);
+  color: var(--gugudan-text-main);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+}
+
+/* 시작하기 거대 버튼 */
+.btn-start-game {
+  width: 100%;
+  background: linear-gradient(135deg, var(--gugudan-accent-cyan), var(--gugudan-accent-neon));
+  border: none;
+  color: var(--gugudan-text-main);
+  padding: 1.1rem;
+  border-radius: 16px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 1.5rem;
+  transition: var(--gugudan-transition);
+  box-shadow: 0 8px 20px -6px rgba(79, 70, 229, 0.4);
+}
+
+.btn-start-game:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 24px -4px rgba(6, 182, 212, 0.5);
+  filter: brightness(1.1);
+}
+
+.btn-start-game:disabled {
+  background: #27273f;
+  color: #5d5d7e;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+
+/* ==========================================================================
+   2. Game Screen (GugudanGame)
+   ========================================================================== */
+
+.game-hud {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.hud-item {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--gugudan-text-muted);
+}
+
+.hud-item strong {
+  color: var(--gugudan-text-main);
+}
+
+.progress-container {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.02);
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gugudan-accent-cyan), var(--gugudan-accent-pink));
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 10px;
+}
+
+.question-display-card {
+  background: var(--gugudan-bg-glass);
+  border: 1px solid var(--gugudan-border-glass);
+  border-radius: 24px;
+  padding: 3rem 2rem;
+  text-align: center;
+  box-shadow: var(--gugudan-shadow-premium);
+  margin-bottom: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 문제의 곱셈 수식 */
+.math-formula {
+  font-size: 3.5rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  text-shadow: 0 0 25px rgba(6, 182, 212, 0.15);
+}
+
+.math-op {
+  color: var(--gugudan-accent-pink);
+}
+
+.math-equal {
+  color: var(--gugudan-accent-cyan);
+}
+
+.math-input-placeholder {
+  display: inline-block;
+  min-width: 90px;
+  height: 70px;
+  line-height: 70px;
+  border-bottom: 4px solid var(--gugudan-accent-cyan);
+  font-size: 3.2rem;
+  color: var(--gugudan-accent-cyan);
+  text-align: center;
+  vertical-align: middle;
+}
+
+/* ==========================
+   객관식 UI (Choices)
+   ========================== */
+.choices-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.choice-button {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--gugudan-border-glass);
+  border-radius: 16px;
+  padding: 1.5rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--gugudan-text-main);
+  cursor: pointer;
+  transition: var(--gugudan-transition);
+}
+
+.choice-button:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--gugudan-accent-cyan);
+  box-shadow: 0 0 15px rgba(6, 182, 212, 0.15);
+  transform: translateY(-3px);
+}
+
+.choice-button:active {
+  transform: translateY(1px);
+}
+
+/* 정답/오답 효과 클래스 */
+.choice-button.correct {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(4, 120, 87, 0.25)) !important;
+  border-color: #10b981 !important;
+  color: #10b981 !important;
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.4) !important;
+}
+
+.choice-button.incorrect {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.25), rgba(185, 28, 28, 0.25)) !important;
+  border-color: #ef4444 !important;
+  color: #ef4444 !important;
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.4) !important;
+}
+
+/* ==========================
+   주관식 입력 & 키패드 UI
+   ========================== */
+.answer-input-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.manual-input {
+  background: rgba(0, 0, 0, 0.25);
+  border: 2px solid var(--gugudan-border-glass);
+  border-radius: 16px;
+  padding: 0.8rem 1.5rem;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--gugudan-accent-cyan);
+  text-align: center;
+  width: 160px;
+  outline: none;
+  transition: var(--gugudan-transition);
+}
+
+.manual-input:focus {
+  border-color: var(--gugudan-accent-cyan);
+  box-shadow: 0 0 15px rgba(6, 182, 212, 0.2);
+}
+
+/* 주관식 정/오답 텍스트 즉시 피드백용 */
+.input-feedback {
+  height: 24px;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+.input-feedback.correct { color: #10b981; }
+.input-feedback.incorrect { color: #ef4444; }
+
+/* 가상 키패드 */
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 320px;
+  margin-top: 0.5rem;
+}
+
+.keypad-btn {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--gugudan-border-glass);
+  border-radius: 12px;
+  padding: 1.1rem;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--gugudan-text-main);
+  cursor: pointer;
+  transition: var(--gugudan-transition);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  user-select: none;
+}
+
+.keypad-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--gugudan-accent-pink);
+}
+
+.keypad-btn:active {
+  transform: scale(0.95);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.keypad-btn.action-btn {
+  background: rgba(79, 70, 229, 0.15);
+  color: #a5b4fc;
+}
+
+.keypad-btn.submit-btn {
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.3), rgba(79, 70, 229, 0.3));
+  color: var(--gugudan-text-main);
+  border-color: var(--gugudan-accent-cyan);
+}
+
+
+/* ==========================================================================
+   3. Results Screen (GugudanResults)
+   ========================================================================== */
+
+.results-card {
+  background: var(--gugudan-bg-glass);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--gugudan-border-glass);
+  border-radius: 24px;
+  padding: 2.5rem;
+  box-shadow: var(--gugudan-shadow-premium);
+  text-align: center;
+  animation: cardFadeIn 0.5s ease;
+}
+
+.score-badge {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.1), rgba(236, 72, 153, 0.1));
+  border: 3px solid var(--gugudan-accent-cyan);
+  margin-bottom: 1.5rem;
+  box-shadow: 0 0 30px rgba(6, 182, 212, 0.2);
+}
+
+.score-num {
+  font-size: 3rem;
+  font-weight: 800;
+  color: var(--gugudan-text-main);
+}
+
+.score-total {
+  font-size: 1rem;
+  color: var(--gugudan-text-muted);
+}
+
+.feedback-msg {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 2rem;
+  color: #a5b4fc;
+}
+
+/* 통계 그리드 */
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.stat-item {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 1rem;
+  border-radius: 16px;
+  border: 1px solid var(--gugudan-border-glass);
+}
+
+.stat-val {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--gugudan-accent-pink);
+  margin-bottom: 0.25rem;
+}
+
+.stat-lbl {
+  font-size: 0.8rem;
+  color: var(--gugudan-text-muted);
+  text-transform: uppercase;
+}
+
+/* 오답 노트 */
+.incorrect-notes {
+  text-align: left;
+  margin-bottom: 2.5rem;
+}
+
+.notes-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+  color: #fda4af;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.notes-list {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 16px;
+  border: 1px solid var(--gugudan-border-glass);
+  padding: 1rem;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.note-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.95rem;
+}
+
+.note-item:last-child {
+  border-bottom: none;
+}
+
+.note-q {
+  font-weight: 600;
+}
+
+.note-answers {
+  font-size: 0.85rem;
+}
+
+.note-wrong {
+  color: #ef4444;
+  text-decoration: line-through;
+  margin-right: 0.75rem;
+}
+
+.note-right {
+  color: #10b981;
+  font-weight: 700;
+}
+
+/* 결과 액션 버튼들 */
+.result-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.btn-result {
+  padding: 1rem;
+  border-radius: 14px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--gugudan-transition);
+}
+
+.btn-result.retry {
+  background: linear-gradient(135deg, var(--gugudan-accent-cyan), var(--gugudan-accent-neon));
+  border: none;
+  color: var(--gugudan-text-main);
+  box-shadow: 0 4px 15px rgba(6, 182, 212, 0.25);
+}
+
+.btn-result.retry:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(6, 182, 212, 0.4);
+}
+
+.btn-result.home {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--gugudan-border-glass);
+  color: var(--gugudan-text-muted);
+}
+
+.btn-result.home:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--gugudan-text-main);
+}
+
+/* 공통 헤더 네비게이션 홈 단락 */
+.gugudan-back-home {
+  background: transparent;
+  border: none;
+  color: var(--gugudan-text-muted);
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  transition: var(--gugudan-transition);
+}
+
+.gugudan-back-home:hover {
+  color: var(--gugudan-accent-cyan);
+}
+
+/* 키프레임 애니메이션 */
+@keyframes cardFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 반응형 모바일 브레이크포인트 */
+@media (max-width: 480px) {
+  .setup-card {
+    padding: 1.5rem;
+  }
+  .setup-title {
+    font-size: 1.5rem;
+  }
+  .dan-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .mode-selector {
+    grid-template-columns: 1fr;
+  }
+  .math-formula {
+    font-size: 2.5rem;
+  }
+  .math-input-placeholder {
+    min-width: 60px;
+    height: 50px;
+    line-height: 50px;
+    font-size: 2.2rem;
+  }
+  .choices-grid {
+    grid-template-columns: 1fr;
+  }
+  .choice-button {
+    padding: 1rem;
+    font-size: 1.25rem;
+  }
+  .results-card {
+    padding: 1.5rem;
+  }
+  .result-actions {
+    grid-template-columns: 1fr;
+  }
+}
