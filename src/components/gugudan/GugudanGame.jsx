@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { generateQuestions, generateMultipleChoices } from '../../utils/gugudanUtils';
 import './Gugudan.css';
 
@@ -12,7 +12,7 @@ function GugudanGame({ levelData, onFinish, onBackToSetup }) {
   const [selectedChoice, setSelectedChoice] = useState(null); // 객관식 선택값
   const [currentChoices, setCurrentChoices] = useState([]); // 현재 문제의 객관식 보기 캐시
   
-  // 점수 및 피드백 상태
+  // 누적 상태값 추적
   const [score, setScore] = useState(0);
   const [wrongAnswers, setWrongAnswers] = useState([]);
   const [feedbackState, setFeedbackState] = useState(null); // 'correct' | 'incorrect' | null
@@ -20,6 +20,7 @@ function GugudanGame({ levelData, onFinish, onBackToSetup }) {
 
   // 타이머 및 시간 측정
   const [gameStartTime] = useState(Date.now());
+  const inputRef = useRef(null);
 
   // 2. 컴포넌트 마운트 시 문제 목록 생성
   useEffect(() => {
@@ -38,28 +39,15 @@ function GugudanGame({ levelData, onFinish, onBackToSetup }) {
       setSelectedChoice(null);
       setFeedbackState(null);
       setIsCorrecting(false);
+
+      // 주관식일 경우 자동으로 인풋 필드에 포커싱
+      setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.focus();
+        }
+      }, 50);
     }
   }, [questions, currentIndex]);
-
-  // 키보드 키패드 입력 연동 지원 (주관식 편의성)
-  useEffect(() => {
-    if (mode !== 'short' || isCorrecting) return;
-
-    const handleKeyDown = (e) => {
-      if (e.key >= '0' && e.key <= '9') {
-        handleKeyPress(e.key);
-      } else if (e.key === 'Backspace') {
-        handleKeyPress('delete');
-      } else if (e.key === 'Escape') {
-        handleKeyPress('clear');
-      } else if (e.key === 'Enter') {
-        handleKeyPress('submit');
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [userAnswer, mode, isCorrecting]);
 
   if (questions.length === 0) {
     return <div className="gugudan-container">문제를 생성하고 있습니다...</div>;
@@ -69,49 +57,43 @@ function GugudanGame({ levelData, onFinish, onBackToSetup }) {
   const { a, b, correctAnswer } = currentQuestion;
 
   // ==========================================
-  // 정오답 판정 및 다음 문제 전환 핸들러
+  // 정오답 판정 및 다음 문제 전환 핸들러 (React 비동기 상태 레이스 프리 설계)
   // ==========================================
   const submitAnswer = (submittedVal) => {
-    if (isCorrecting) return; // 락 상태 시 중복 제출 방지
+    if (isCorrecting) return; // 중복 제출 방지 락
     setIsCorrecting(true);
 
     const isAnswerCorrect = Number(submittedVal) === correctAnswer;
+    
+    // 비동기 갱신 지연을 우회하기 위해 로컬 변수로 즉시 누적값 계산 (시니어 아키텍트 패턴)
+    const nextScore = isAnswerCorrect ? score + 1 : score;
+    let nextWrongAnswers = [...wrongAnswers];
 
     if (isAnswerCorrect) {
-      setScore((prev) => prev + 1);
+      setScore(nextScore);
       setFeedbackState('correct');
     } else {
       setFeedbackState('incorrect');
-      setWrongAnswers((prev) => [
-        ...prev,
-        {
-          formula: `${a} × ${b}`,
-          userAnswer: submittedVal === '' ? '미입력' : submittedVal,
-          correctAnswer: correctAnswer,
-        },
-      ]);
+      const newWrongItem = {
+        formula: `${a} × ${b}`,
+        userAnswer: submittedVal === '' ? '미입력' : submittedVal,
+        correctAnswer: correctAnswer,
+      };
+      nextWrongAnswers.push(newWrongItem);
+      setWrongAnswers(nextWrongAnswers);
     }
 
-    // 0.8초의 피드백 노출 후 다음 문제로 전이 (사용자 인지 속도 배려)
+    // 0.85초의 피드백 노출 후 다음 문제로 전이
     setTimeout(() => {
       if (currentIndex + 1 < questions.length) {
         setCurrentIndex((prev) => prev + 1);
       } else {
-        // 게임 완료 핸들러 호출
+        // 게임 완료 핸들러 호출 - 최신 스냅샷 로컬 변수(nextScore, nextWrongAnswers) 전달로 정합성 100% 보장
         const timeSpent = Math.floor((Date.now() - gameStartTime) / 1000);
         onFinish({
-          score: isAnswerCorrect ? score + 1 : score,
+          score: nextScore,
           total: questions.length,
-          wrongAnswers: isAnswerCorrect
-            ? wrongAnswers
-            : [
-                ...wrongAnswers,
-                {
-                  formula: `${a} × ${b}`,
-                  userAnswer: submittedVal === '' ? '미입력' : submittedVal,
-                  correctAnswer: correctAnswer,
-                },
-              ].filter((v, i, self) => self.findIndex(t => t.formula === v.formula) === i), // 중복 제거 안전장치
+          wrongAnswers: nextWrongAnswers,
           timeSpent,
         });
       }
@@ -131,14 +113,19 @@ function GugudanGame({ levelData, onFinish, onBackToSetup }) {
 
     if (key === 'clear') {
       setUserAnswer('');
+      if (inputRef.current) inputRef.current.focus();
     } else if (key === 'delete') {
       setUserAnswer((prev) => prev.slice(0, -1));
+      if (inputRef.current) inputRef.current.focus();
     } else if (key === 'submit') {
-      submitAnswer(userAnswer);
+      if (userAnswer !== '') {
+        submitAnswer(userAnswer);
+      }
     } else {
-      // 세 자릿수 이상 입력 방지 (구구단 15단 최대값은 15 * 15 = 225이므로 3자리 제한이 적절)
+      // 세 자릿수 이상 입력 방지
       if (userAnswer.length >= 3) return;
       setUserAnswer((prev) => prev + key);
+      if (inputRef.current) inputRef.current.focus();
     }
   };
 
@@ -175,9 +162,29 @@ function GugudanGame({ levelData, onFinish, onBackToSetup }) {
           {mode === 'choice' ? (
             <span className="math-input-placeholder">?</span>
           ) : (
-            <span className="math-input-placeholder">
-              {userAnswer || ''}
-            </span>
+            <input
+              ref={inputRef}
+              type="text"
+              pattern="[0-9]*"
+              inputMode="numeric"
+              className="manual-input"
+              value={userAnswer}
+              onChange={(e) => {
+                // 숫자 이외의 문자 필터링 및 최대 3자리 제한
+                const filtered = e.target.value.replace(/[^0-9]/g, '');
+                if (filtered.length <= 3) {
+                  setUserAnswer(filtered);
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && userAnswer !== '') {
+                  submitAnswer(userAnswer);
+                }
+              }}
+              placeholder="?"
+              disabled={isCorrecting}
+              autoFocus
+            />
           )}
         </div>
       </div>
@@ -227,6 +234,7 @@ function GugudanGame({ levelData, onFinish, onBackToSetup }) {
           <div className="keypad">
             {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((num) => (
               <button
+                type="button"
                 key={num}
                 className="keypad-btn"
                 onClick={() => handleKeyPress(num)}
@@ -236,6 +244,7 @@ function GugudanGame({ levelData, onFinish, onBackToSetup }) {
               </button>
             ))}
             <button
+              type="button"
               className="keypad-btn action-btn"
               onClick={() => handleKeyPress('clear')}
               disabled={isCorrecting}
@@ -243,6 +252,7 @@ function GugudanGame({ levelData, onFinish, onBackToSetup }) {
               C
             </button>
             <button
+              type="button"
               className="keypad-btn"
               onClick={() => handleKeyPress('0')}
               disabled={isCorrecting}
@@ -250,6 +260,7 @@ function GugudanGame({ levelData, onFinish, onBackToSetup }) {
               0
             </button>
             <button
+              type="button"
               className="keypad-btn action-btn"
               onClick={() => handleKeyPress('delete')}
               disabled={isCorrecting}
@@ -257,6 +268,7 @@ function GugudanGame({ levelData, onFinish, onBackToSetup }) {
               ⌫
             </button>
             <button
+              type="button"
               className="keypad-btn submit-btn"
               style={{ gridColumn: 'span 3' }}
               onClick={() => handleKeyPress('submit')}
