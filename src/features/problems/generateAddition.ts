@@ -2,11 +2,11 @@ import type { Problem } from '@/features/solver/steps/types';
 
 const randInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
 
-/** A 2-digit + 2-digit addition that requires a carry in the ones column (more instructive). */
+/** A 2-digit + 2-digit addition that always requires a carry in the ones column. */
 export function generateAddition(): Problem {
-  const a = randInt(10, 99);
-  const onesA = a % 10;
-  const onesB = randInt(10 - onesA === 10 ? 0 : 10 - onesA, 9); // force ones sum >= 10
-  const b = randInt(1, 9) * 10 + onesB;
-  return { operation: 'add', operands: [a, Math.min(b, 99)] };
+  const onesA = randInt(1, 9);                 // 1..9 so a ones-carry is always achievable
+  const a = randInt(1, 9) * 10 + onesA;        // 2-digit, [11,99]
+  const onesB = randInt(10 - onesA, 9);        // forces onesA + onesB >= 10
+  const b = randInt(1, 9) * 10 + onesB;        // 2-digit, [10,99]
+  return { operation: 'add', operands: [a, b] };
 }

@@ -105,6 +105,6 @@ export function useSolveEngine(steps: Step[]) {
       next,
       reset,
     }),
-    [current, state, isLast, submit, next, reset],
+    [state, submit, next, reset],
   );
 }

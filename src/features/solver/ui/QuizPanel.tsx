@@ -35,7 +35,7 @@ export function QuizPanel({ quiz, feedback, hint, revealedAnswer, onSubmit }: Qu
           onKeyDown={(e) => e.key === 'Enter' && submit()}
           disabled={revealedAnswer !== null || feedback === 'correct'}
         />
-        <Button size="sm" onClick={submit}>확인</Button>
+        <Button size="sm" onClick={submit} disabled={revealedAnswer !== null || feedback === 'correct'}>확인</Button>
       </div>
       {feedback === 'correct' && <p className="mt-2 text-sm font-semibold text-green-700">정답이에요! ✓</p>}
       {feedback === 'wrong' && hint && (

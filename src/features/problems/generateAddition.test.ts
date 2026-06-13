@@ -11,6 +11,7 @@ describe('generateAddition', () => {
         expect(n).toBeGreaterThanOrEqual(10);
         expect(n).toBeLessThanOrEqual(99);
       }
+      expect((p.operands[0] % 10) + (p.operands[1] % 10)).toBeGreaterThanOrEqual(10);
     }
   });
 });
