@@ -23,7 +23,7 @@ export function QuizPanel({ quiz, feedback, hint, revealedAnswer, onSubmit }: Qu
 
   return (
     <div className="rounded-xl border-2 border-amber-200 bg-amber-50 px-4 py-3">
-      <p className="mb-2 font-bold text-amber-900">🧮 {quiz.prompt}</p>
+      <p className="mb-2 font-bold text-amber-900">🧮 <span>{quiz.prompt}</span></p>
       <div className="flex items-center gap-2">
         <input
           type="number"
