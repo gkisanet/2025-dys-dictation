@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { Quiz } from '../steps/types';
-import { Button } from '@/components/ui/button';
+import { NumberPad } from './NumberPad';
 
 interface QuizPanelProps {
   quiz: Quiz;
@@ -11,32 +11,48 @@ interface QuizPanelProps {
 }
 
 export function QuizPanel({ quiz, feedback, hint, revealedAnswer, onSubmit }: QuizPanelProps) {
-  const [value, setValue] = useState('');
+  const [entry, setEntry] = useState('');
 
-  // Clear the input when the prompt changes (new checkpoint).
-  useEffect(() => setValue(''), [quiz.prompt]);
+  // Clear on new checkpoint (prompt change).
+  useEffect(() => setEntry(''), [quiz.prompt]);
 
-  const submit = () => {
-    if (value.trim() === '') return;
-    onSubmit(Number(value));
+  const locked = revealedAnswer !== null || feedback === 'correct';
+
+  const handleDigit = (d: string) => {
+    if (locked) return;
+    setEntry((prev) => (prev.length < 6 ? prev + d : prev));
+  };
+
+  const handleDelete = () => {
+    if (locked) return;
+    setEntry((prev) => prev.slice(0, -1));
+  };
+
+  const handleSubmit = () => {
+    if (entry === '') return;
+    onSubmit(Number(entry));
+    setEntry('');
   };
 
   return (
-    <div className="rounded-xl border-2 border-amber-200 bg-amber-50 px-4 py-3">
+    <div className="rounded-xl border-2 border-amber-200 bg-amber-50 p-3">
       <p className="mb-2 font-bold text-amber-900">🧮 <span>{quiz.prompt}</span></p>
-      <div className="flex items-center gap-2">
-        <input
-          type="number"
-          inputMode="numeric"
-          aria-label="답"
-          className="w-24 rounded-lg border-2 border-amber-300 px-2 py-1.5 text-center text-xl"
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && submit()}
-          disabled={revealedAnswer !== null || feedback === 'correct'}
-        />
-        <Button size="sm" onClick={submit} disabled={revealedAnswer !== null || feedback === 'correct'}>확인</Button>
+
+      {/* Read-only answer display */}
+      <div
+        aria-label="답"
+        className="mb-2 flex h-11 w-full items-center justify-center rounded-lg border-2 border-amber-300 bg-white text-center text-xl font-bold text-amber-900 select-none"
+      >
+        {entry !== '' ? entry : <span className="text-amber-300">?</span>}
       </div>
+
+      <NumberPad
+        onDigit={handleDigit}
+        onDelete={handleDelete}
+        onSubmit={handleSubmit}
+        disabled={locked}
+      />
+
       {feedback === 'correct' && <p className="mt-2 text-sm font-semibold text-green-700">정답이에요! ✓</p>}
       {feedback === 'wrong' && hint && (
         <p className="mt-2 text-sm text-amber-800">힌트: <span>{hint}</span></p>

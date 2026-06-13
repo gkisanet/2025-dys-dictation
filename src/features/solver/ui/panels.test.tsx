@@ -16,10 +16,12 @@ describe('NarrationPanel', () => {
 });
 
 describe('QuizPanel', () => {
-  it('submits the typed number', async () => {
+  it('submits the typed number via keypad', async () => {
     const onSubmit = vi.fn();
     render(<QuizPanel quiz={quiz} feedback="none" hint={null} revealedAnswer={null} onSubmit={onSubmit} />);
-    await userEvent.type(screen.getByRole('spinbutton'), '12');
+    // Enter "12" using the on-screen numeric keypad
+    await userEvent.click(screen.getByRole('button', { name: '1' }));
+    await userEvent.click(screen.getByRole('button', { name: '2' }));
     await userEvent.click(screen.getByRole('button', { name: '확인' }));
     expect(onSubmit).toHaveBeenCalledWith(12);
   });
