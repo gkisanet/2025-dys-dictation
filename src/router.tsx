@@ -2,14 +2,14 @@ import {
   createRootRoute,
   createRoute,
   createRouter,
-  Outlet,
 } from '@tanstack/react-router';
+import { AppShell } from './components/AppShell';
 import { Home } from './routes/Home';
 import { LearnStages } from './routes/LearnStages';
 import { Solve } from './routes/Solve';
 import { Progress } from './routes/Progress';
 
-const rootRoute = createRootRoute({ component: () => <Outlet /> });
+const rootRoute = createRootRoute({ component: AppShell });
 
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
