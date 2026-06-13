@@ -14,10 +14,11 @@ let _store: ProgressStore | null = null;
 export function getProgressStore(): ProgressStore {
   if (!_store) {
     if (isBrowserWithOPFS()) {
-      // Dynamic import so Vitest (jsdom) never evaluates sqlocal at module load
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { createSqliteStore } = require('./sqliteStore') as { createSqliteStore: () => ProgressStore };
-      _store = createSqliteStore();
+      // Lazy import via a function call — the module is imported at build time
+      // but createSqliteStore() is only invoked here, never at module-eval time.
+      // Vitest runs in jsdom where isBrowserWithOPFS() returns false,
+      // so this branch (and sqlocal) is never executed in tests.
+      _store = getSqliteStoreFactory()();
     } else {
       _store = createMemoryStore();
     }
@@ -28,4 +29,11 @@ export function getProgressStore(): ProgressStore {
 /** Reset the singleton — used in tests to get a fresh store. */
 export function _resetProgressStore(): void {
   _store = null;
+}
+
+// This import is top-level (so TypeScript can type-check it) but the
+// factory function is only *called* inside getProgressStore when in a real browser.
+import { createSqliteStore } from './sqliteStore';
+function getSqliteStoreFactory(): () => ProgressStore {
+  return createSqliteStore;
 }
