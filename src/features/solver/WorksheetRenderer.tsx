@@ -52,6 +52,8 @@ function RegionGrid({
   const all = board.cells.filter((c) => c.region === region);
   if (all.length === 0) return null;
   const visible = all.filter((c) => c.visible);
+  // Don't render a region (or its divider) until at least one cell is visible.
+  if (visible.length === 0) return null;
   const maxPlace = Math.max(...all.map((c) => c.place));
   const rows = [...new Set(all.map((c) => c.row))].sort((a, b) => a - b);
   const dividerRows = board.dividers.filter((d) => d.region === region).map((d) => d.row);
