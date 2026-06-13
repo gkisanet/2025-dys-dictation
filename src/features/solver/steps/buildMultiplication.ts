@@ -1,11 +1,124 @@
 import type { BoardState, Cell, Highlight, Problem, Step } from './types';
 import { onesFirst, multiplyByDigit } from './mathColumns';
 
+/** Single-region place-zero animation for a × (multiple of 10), e.g. 18 × 20. */
+function buildMultiplyByTen(problem: Problem): Step[] {
+  const [a, b] = problem.operands;
+  const tensB = b / 10; // b must be divisible by 10
+  const aD = onesFirst(a);
+  const bD = onesFirst(b); // e.g. [0, 2] for 20
+
+  const p = multiplyByDigit(a, tensB); // a × tensB
+  const final = a * b;
+
+  // Result digits ones-first: ones digit is place-zero (0), followed by a×tensB digits
+  const shiftedDigits = onesFirst(final); // e.g. [0, 6, 3] for 360
+
+  const cells: Cell[] = [];
+
+  // Row 0: carry row (no visible carries in this layout at setup)
+  // Row 1: a operand
+  aD.forEach((d, pl) =>
+    cells.push({ id: `main-a-${pl}`, region: 'main', row: 1, place: pl, value: String(d), role: 'operand', visible: false })
+  );
+  // Row 2: × b (operator + b digits)
+  bD.forEach((d, pl) =>
+    cells.push({ id: `main-b-${pl}`, region: 'main', row: 2, place: pl, value: String(d), role: 'operand', visible: false })
+  );
+  cells.push({ id: 'main-op', region: 'main', row: 2, place: aD.length, value: '×', role: 'operator', visible: false });
+
+  // Carry marks above each result column (skip col 0 — always no carry for the place-zero)
+  for (let i = 1; i < aD.length + 1; i++) {
+    const carryVal = p.carryInto[i - 1] ?? 0;
+    if (carryVal > 0) {
+      cells.push({ id: `main-c-${i}`, region: 'main', row: 0, place: i, value: String(carryVal), role: 'carry', superscript: true, visible: false });
+    }
+  }
+
+  // Row 3 result: ones is the zero-placeholder, rest are shifted product digits
+  cells.push({ id: 'main-r-0', region: 'main', row: 3, place: 0, value: '0', role: 'zero-placeholder', visible: false });
+  shiftedDigits.slice(1).forEach((d, i) =>
+    cells.push({ id: `main-r-${i + 1}`, region: 'main', row: 3, place: i + 1, value: String(d), role: 'result', visible: false })
+  );
+
+  const dividers = [{ region: 'main' as const, row: 2 }];
+
+  const boardFrom = (shown: Set<string>, hi: Record<string, NonNullable<Highlight>> = {}): BoardState => ({
+    regions: ['main'],
+    cells: cells.map((c) => ({ ...c, visible: shown.has(c.id), highlight: hi[c.id] ?? null })),
+    dividers,
+  });
+
+  const steps: Step[] = [];
+  const shown = new Set<string>();
+
+  // 1. setup: reveal a and × b
+  aD.forEach((_, pl) => shown.add(`main-a-${pl}`));
+  bD.forEach((_, pl) => shown.add(`main-b-${pl}`));
+  shown.add('main-op');
+  steps.push({
+    id: 'setup',
+    kind: 'setup',
+    narration: `${a} × ${b}를 세로로 써요.`,
+    board: boardFrom(shown),
+  });
+
+  // 2. place-zero: reveal the ones result cell (zero placeholder)
+  shown.add('main-r-0');
+  steps.push({
+    id: 'place-zero',
+    kind: 'place-zero',
+    narration: `${b}는 ×10이라 일의 자리에 0을 먼저 놓아요.`,
+    board: boardFrom(shown, { 'main-r-0': 'zero' }),
+  });
+
+  // 3. ask: quiz a × tensB, highlight the b tens digit
+  steps.push({
+    id: 'ask',
+    kind: 'digit-op',
+    narration: `이제 ${a} × ${tensB} 를 구해 그 앞에 놓아요.`,
+    board: boardFrom(shown, { 'main-r-0': 'zero', [`main-b-1`]: 'now' }),
+    quiz: {
+      prompt: `${a} × ${tensB} = ?`,
+      answer: p.product,
+      hints: [
+        `${a}에 ${tensB}를 곱해요.`,
+        `${a} × ${tensB} 를 계산해보세요.`,
+      ],
+    },
+  });
+
+  // 4. write: reveal shifted product digits + carry marks
+  shiftedDigits.slice(1).forEach((_, i) => shown.add(`main-r-${i + 1}`));
+  for (let i = 1; i < aD.length + 1; i++) {
+    const carryVal = p.carryInto[i - 1] ?? 0;
+    if (carryVal > 0) shown.add(`main-c-${i}`);
+  }
+  steps.push({
+    id: 'write',
+    kind: 'sum',
+    narration: `${a}×${tensB}=${p.product}, 뒤에 0 붙여 ${final}.`,
+    board: boardFrom(shown, { 'main-r-0': 'zero' }),
+  });
+
+  // 5. result
+  steps.push({
+    id: 'result',
+    kind: 'result',
+    narration: `다 곱했어요! ${a} × ${b} = ${final}.`,
+    board: boardFrom(shown),
+  });
+
+  return steps;
+}
+
 export function buildMultiplication(problem: Problem): Step[] {
   const [a, b] = problem.operands;
   const bD = onesFirst(b);       // b digits ones-first
   const onesB = bD[0];           // ones digit of b
   const tensB = bD[1] ?? 0;      // tens digit of b
+
+  if (onesB === 0) return buildMultiplyByTen(problem);
   const aD = onesFirst(a);
 
   // Partial products

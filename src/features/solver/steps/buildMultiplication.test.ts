@@ -118,3 +118,59 @@ describe('buildMultiplication(13 × 12) — lighter correctness check', () => {
     expect(rightAsk.quiz?.answer).toBe(13);
   });
 });
+
+describe('buildMultiplication(18 × 20) — single-branch place-zero path', () => {
+  const steps = buildMultiplication({ operation: 'mul', operands: [18, 20] });
+
+  it('step ids are exactly the single-branch set', () => {
+    expect(steps.map(s => s.id)).toEqual([
+      'setup', 'place-zero', 'ask', 'write', 'result',
+    ]);
+  });
+
+  it('ask quiz answer = 36 (18 × 2)', () => {
+    const ask = steps.find(s => s.id === 'ask')!;
+    expect(ask.quiz?.answer).toBe(36);
+  });
+
+  it('result digits concatenate to 360', () => {
+    const result = steps.find(s => s.id === 'result')!;
+    const digits = result.board.cells
+      .filter(c => c.visible && (c.role === 'result' || c.role === 'zero-placeholder'))
+      .sort((a, b) => b.place - a.place)
+      .map(c => c.value)
+      .join('');
+    expect(digits).toBe('360');
+  });
+
+  it('the ones result cell has role "zero-placeholder" and highlight "zero" in place-zero step', () => {
+    const placeZeroStep = steps.find(s => s.id === 'place-zero')!;
+    const zeroCell = placeZeroStep.board.cells.find(c => c.role === 'zero-placeholder' && c.visible);
+    expect(zeroCell).toBeDefined();
+    expect(zeroCell!.value).toBe('0');
+    expect(zeroCell!.highlight).toBe('zero');
+  });
+
+  it('there is exactly one zero-placeholder cell in the entire board', () => {
+    const result = steps.find(s => s.id === 'result')!;
+    const zeroPlaceholders = result.board.cells.filter(c => c.role === 'zero-placeholder');
+    expect(zeroPlaceholders.length).toBe(1);
+  });
+
+  it('uses only main region (single-branch)', () => {
+    const result = steps.find(s => s.id === 'result')!;
+    const regions = new Set(result.board.cells.map(c => c.region));
+    expect([...regions]).toEqual(['main']);
+  });
+});
+
+describe('buildMultiplication — existing 18×24 tests still reach two-branch path', () => {
+  it('18×24 still has the two-branch ids (onesB !== 0)', () => {
+    const steps = buildMultiplication({ operation: 'mul', operands: [18, 24] });
+    expect(steps.map(s => s.id)).toEqual([
+      'setup', 'decompose', 'left-ask', 'left-write',
+      'right-zero', 'right-ask', 'right-write',
+      'gather', 'sum-ask', 'result',
+    ]);
+  });
+});
