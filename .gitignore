@@ -158,3 +158,6 @@ dist-ssr
 *.sln
 *.sw?
 >>>>>>> e2c3c4c (first commit)
+
+# Superpowers brainstorming
+.superpowers/
