@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { useParams, Link } from '@tanstack/react-router';
+import { ChevronLeft } from 'lucide-react';
 import { SolveSession } from '@/features/solver/SolveSession';
 import { generateProblem } from '@/features/problems/generateProblem';
-import { getStage } from '@/features/curriculum/curriculum';
+import { getStage, stagesFor } from '@/features/curriculum/curriculum';
+import type { Operation } from '@/features/solver/steps/types';
 
 export function Solve() {
   const { operation, stageId } = useParams({ from: '/solve/$operation/$stageId' });
@@ -15,26 +17,46 @@ export function Solve() {
 
   if (!stage || !problem) {
     return (
-      <main className="mx-auto max-w-md p-6">
-        <Link to="/" className="mb-4 inline-block text-sm text-muted-foreground hover:underline">
-          ← 홈으로
+      <div className="flex flex-col gap-4">
+        <Link to="/" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <ChevronLeft className="size-4" />
+          홈으로
         </Link>
         <p className="text-destructive">알 수 없는 단계: {stageId}</p>
-      </main>
+      </div>
     );
   }
 
+  // Compute next stage for the completion screen
+  const stages = stagesFor(stage.operation as Operation);
+  const currentIdx = stages.findIndex((s) => s.id === stage.id);
+  const nextStage = currentIdx >= 0 && currentIdx + 1 < stages.length ? stages[currentIdx + 1] : null;
+  const nextStageHref = nextStage
+    ? `/solve/${nextStage.operation}/${nextStage.id}`
+    : undefined;
+
   return (
-    <main className="mx-auto max-w-md p-6">
+    <div className="flex flex-col gap-4">
+      {/* Back link */}
       <Link
         to="/learn/$operation"
         params={{ operation }}
-        className="mb-4 inline-block text-sm text-muted-foreground hover:underline"
+        className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
-        ← 단계 목록
+        <ChevronLeft className="size-4" />
+        단계 목록
       </Link>
-      <h1 className="mb-6 text-xl font-bold">{stage.title}</h1>
-      <SolveSession problem={problem} verbosity={stage.verbosity} stageId={stage.id} />
-    </main>
+
+      {/* Stage title — the router test asserts this heading */}
+      <h1 className="text-xl font-bold">{stage.title}</h1>
+
+      <SolveSession
+        problem={problem}
+        verbosity={stage.verbosity}
+        stageId={stage.id}
+        operation={operation}
+        nextStageHref={nextStageHref}
+      />
+    </div>
   );
 }
