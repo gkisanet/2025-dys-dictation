@@ -9,6 +9,9 @@ export default defineConfig({
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },
+  optimizeDeps: {
+    exclude: ['sqlocal'],
+  },
   test: {
     globals: true,
     environment: 'jsdom',
