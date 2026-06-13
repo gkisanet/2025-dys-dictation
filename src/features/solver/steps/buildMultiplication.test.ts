@@ -214,27 +214,45 @@ describe('buildMultiplication(92 × 16) — 2x2 digit-by-digit', () => {
     expect(s.quiz?.answer).toBe(1472);
   });
 
-  it('at gather: left/right result cells are invisible, merge addend cells are visible', () => {
+  it('at gather: left/right result cells STAY visible and merge addend cells are also visible', () => {
     const s = steps.find(s => s.id === 'gather')!;
     const { cells } = s.board;
     const branchResults = cells.filter(c =>
       (c.region === 'left' || c.region === 'right') && (c.role === 'result' || c.role === 'zero-placeholder')
     );
-    expect(branchResults.every(c => !c.visible)).toBe(true);
+    expect(branchResults.every(c => c.visible)).toBe(true);
     const mergeAddends = cells.filter(c => c.region === 'merge' && c.role === 'partial' && c.visible);
     expect(mergeAddends.length).toBeGreaterThan(0);
   });
 
-  it('gather layoutId invariant: left/right layoutIds equal merge layoutIds', () => {
+  it('branch result cells have NO layoutId; merge addend-1 cells have enterFrom left, addend-2 have enterFrom right', () => {
     const s = steps.find(s => s.id === 'result')!;
     const { cells } = s.board;
-    const branchIds = new Set(
-      cells.filter(c => (c.region === 'left' || c.region === 'right') && c.layoutId).map(c => c.layoutId!)
-    );
-    const mergeIds = new Set(
-      cells.filter(c => c.region === 'merge' && c.layoutId).map(c => c.layoutId!)
-    );
-    expect([...branchIds].sort()).toEqual([...mergeIds].sort());
+    const branchResults = cells.filter(c => (c.region === 'left' || c.region === 'right') && (c.role === 'result' || c.role === 'zero-placeholder'));
+    expect(branchResults.every(c => !c.layoutId)).toBe(true);
+    const mergeA = cells.filter(c => c.region === 'merge' && c.role === 'partial' && c.id.startsWith('merge-a-'));
+    expect(mergeA.every(c => c.enterFrom === 'left')).toBe(true);
+    const mergeB = cells.filter(c => c.region === 'merge' && c.role === 'partial' && c.id.startsWith('merge-b-'));
+    expect(mergeB.every(c => c.enterFrom === 'right')).toBe(true);
+  });
+
+  it('carry anchors: both left and right regions always include row 0 in their cell set', () => {
+    const s = steps.find(s => s.id === 'setup')!;
+    const { cells } = s.board;
+    const leftRow0 = cells.filter(c => c.region === 'left' && c.row === 0);
+    const rightRow0 = cells.filter(c => c.region === 'right' && c.row === 0);
+    expect(leftRow0.length).toBeGreaterThan(0);
+    expect(rightRow0.length).toBeGreaterThan(0);
+  });
+
+  it('right operator row shows × tensB and 0 digit (× 16 right branch shows × 10)', () => {
+    const s = steps.find(s => s.id === 'right-zero')!;
+    const { cells } = s.board;
+    const rightOpRow = cells.filter(c => c.region === 'right' && c.row === 2 && c.visible);
+    const values = rightOpRow.map(c => c.value);
+    expect(values).toContain('×');
+    expect(values).toContain('1');  // tensB digit
+    expect(values).toContain('0');  // the appended zero
   });
 
   it('result reveals merge final digits that concatenate to "1472"', () => {
@@ -309,19 +327,25 @@ describe('buildMultiplication(78 × 24) — 2x2 with carries', () => {
   });
 });
 
-// ── layoutId invariant across cases ──────────────────────────────────────────
+// ── enterFrom invariant across cases ─────────────────────────────────────────
 
-describe('buildMultiplication — branch/merge layoutId invariant', () => {
-  it.each([[18, 24], [13, 12], [92, 16], [78, 24]] as const)('branch and merge layoutIds match for %i × %i', (a, b) => {
+describe('buildMultiplication — enterFrom and carry-anchor invariants', () => {
+  it.each([[18, 24], [13, 12], [92, 16], [78, 24]] as const)('merge addends have correct enterFrom for %i × %i', (a, b) => {
     const steps = buildMultiplication({ operation: 'mul', operands: [a, b] });
     const last = steps[steps.length - 1];
-    const branchIds = new Set(
-      last.board.cells.filter(c => (c.region === 'left' || c.region === 'right') && c.layoutId).map(c => c.layoutId!)
-    );
-    const mergeIds = new Set(
-      last.board.cells.filter(c => c.region === 'merge' && c.layoutId).map(c => c.layoutId!)
-    );
-    expect([...branchIds].sort()).toEqual([...mergeIds].sort());
+    const mergeA = last.board.cells.filter(c => c.region === 'merge' && c.id.startsWith('merge-a-') && c.role === 'partial');
+    const mergeB = last.board.cells.filter(c => c.region === 'merge' && c.id.startsWith('merge-b-') && c.role === 'partial');
+    expect(mergeA.every(c => c.enterFrom === 'left')).toBe(true);
+    expect(mergeB.every(c => c.enterFrom === 'right')).toBe(true);
+  });
+
+  it.each([[18, 24], [13, 12], [92, 16], [78, 24]] as const)('left and right both have row 0 in cell set for %i × %i', (a, b) => {
+    const steps = buildMultiplication({ operation: 'mul', operands: [a, b] });
+    const setup = steps[0];
+    const leftRow0 = setup.board.cells.filter(c => c.region === 'left' && c.row === 0);
+    const rightRow0 = setup.board.cells.filter(c => c.region === 'right' && c.row === 0);
+    expect(leftRow0.length).toBeGreaterThan(0);
+    expect(rightRow0.length).toBeGreaterThan(0);
   });
 });
 

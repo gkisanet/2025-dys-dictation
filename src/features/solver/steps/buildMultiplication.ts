@@ -330,9 +330,13 @@ export function buildMultiplication(problem: Problem): Step[] {
       cells.push({ id: `left-c-${i}`, region: 'left', row: 0, place: i, value: String(p1.carryInto[i]), role: 'carry', superscript: true, visible: false });
     }
   }
-  // Row 3: P1 result digits with layoutIds
+  // Carry anchor: if no real carry cells exist for left row 0, add invisible anchor so row 0 is always reserved
+  if (!cells.some(c => c.region === 'left' && c.row === 0)) {
+    cells.push({ id: 'left-carryanchor', region: 'left', row: 0, place: 0, value: '', role: 'carry', superscript: true, visible: false });
+  }
+  // Row 3: P1 result digits (no layoutId — gather is copy-to-center, not move)
   p1Digits.forEach((d, pl) =>
-    cells.push({ id: `left-r-${pl}`, region: 'left', row: 3, place: pl, value: String(d), role: 'result', visible: false, layoutId: `p1-${pl}` })
+    cells.push({ id: `left-r-${pl}`, region: 'left', row: 3, place: pl, value: String(d), role: 'result', visible: false })
   );
 
   // RIGHT region: a × tensB (shift=1, place-zero at place 0)
@@ -340,27 +344,32 @@ export function buildMultiplication(problem: Problem): Step[] {
   aD.forEach((d, pl) =>
     cells.push({ id: `right-a-${pl}`, region: 'right', row: 1, place: pl + 1, value: String(d), role: 'operand', visible: false })
   );
-  // Row 2: × tensB
-  cells.push({ id: 'right-op', region: 'right', row: 2, place: aD.length + 1, value: '×', role: 'operator', visible: false });
-  cells.push({ id: 'right-b', region: 'right', row: 2, place: 1, value: String(tensB), role: 'operand', visible: false });
+  // Row 2: × tensB (showing full ×N0 with the trailing zero)
+  cells.push({ id: 'right-op', region: 'right', row: 2, place: aD.length + 2, value: '×', role: 'operator', visible: false });
+  cells.push({ id: 'right-b', region: 'right', row: 2, place: 2, value: String(tensB), role: 'operand', visible: false });
+  cells.push({ id: 'right-b-zero', region: 'right', row: 2, place: 1, value: '0', role: 'operand', visible: false });
   // Row 0: carries for right (skip i=0); placed at i+1 (shifted)
   for (let i = 1; i < aD.length; i++) {
     if (p2.carryInto[i] > 0) {
       cells.push({ id: `right-c-${i}`, region: 'right', row: 0, place: i + 1, value: String(p2.carryInto[i]), role: 'carry', superscript: true, visible: false });
     }
   }
-  // Row 3: P2 result — place 0 is zero-placeholder; digits from p2ShiftedDigits at places 1..N
-  cells.push({ id: 'right-r-0', region: 'right', row: 3, place: 0, value: '0', role: 'zero-placeholder', visible: false, layoutId: 'p2-0' });
+  // Carry anchor: if no real carry cells exist for right row 0, add invisible anchor so row 0 is always reserved
+  if (!cells.some(c => c.region === 'right' && c.row === 0)) {
+    cells.push({ id: 'right-carryanchor', region: 'right', row: 0, place: 0, value: '', role: 'carry', superscript: true, visible: false });
+  }
+  // Row 3: P2 result — place 0 is zero-placeholder; digits from p2ShiftedDigits at places 1..N (no layoutId)
+  cells.push({ id: 'right-r-0', region: 'right', row: 3, place: 0, value: '0', role: 'zero-placeholder', visible: false });
   p2ShiftedDigits.slice(1).forEach((d, i) =>
-    cells.push({ id: `right-r-${i + 1}`, region: 'right', row: 3, place: i + 1, value: String(d), role: 'result', visible: false, layoutId: `p2-${i + 1}` })
+    cells.push({ id: `right-r-${i + 1}`, region: 'right', row: 3, place: i + 1, value: String(d), role: 'result', visible: false })
   );
 
-  // MERGE region
+  // MERGE region: addends slide in from their branch side (no layoutId — they're copies, not moved cells)
   mergeAD.forEach((d, pl) =>
-    cells.push({ id: `merge-a-${pl}`, region: 'merge', row: 1, place: pl, value: String(d), role: 'partial', visible: false, layoutId: `p1-${pl}` })
+    cells.push({ id: `merge-a-${pl}`, region: 'merge', row: 1, place: pl, value: String(d), role: 'partial', visible: false, enterFrom: 'left' as const })
   );
   mergeBD.forEach((d, pl) =>
-    cells.push({ id: `merge-b-${pl}`, region: 'merge', row: 2, place: pl, value: String(d), role: 'partial', visible: false, layoutId: `p2-${pl}` })
+    cells.push({ id: `merge-b-${pl}`, region: 'merge', row: 2, place: pl, value: String(d), role: 'partial', visible: false, enterFrom: 'right' as const })
   );
   cells.push({ id: 'merge-op', region: 'merge', row: 2, place: mergeBD.length, value: '+', role: 'operator', visible: false });
   for (let i = 1; i < mergeCols; i++) {
@@ -469,6 +478,7 @@ export function buildMultiplication(problem: Problem): Step[] {
   aD.forEach((_, pl) => shown.add(`right-a-${pl}`));
   shown.add('right-op');
   shown.add('right-b');
+  shown.add('right-b-zero');
   shown.add('right-r-0');
   steps.push({
     id: 'right-zero', kind: 'place-zero',
@@ -488,7 +498,7 @@ export function buildMultiplication(problem: Problem): Step[] {
     const prompt = `${aD[i]} × ${tensB}${carryPromptPart} = ?`;
     const aId = `right-a-${i}`;
     const bId = `right-b`;
-    const askHi: Record<string, NonNullable<Highlight>> = { [aId]: 'now', [bId]: 'now', 'right-r-0': 'zero' };
+    const askHi: Record<string, NonNullable<Highlight>> = { [aId]: 'now', [bId]: 'now', 'right-b-zero': 'zero', 'right-r-0': 'zero' };
     if (carryInto > 0 && cells.some(c => c.id === `right-c-${i}`)) {
       askHi[`right-c-${i}`] = 'now';
     }
@@ -528,14 +538,9 @@ export function buildMultiplication(problem: Problem): Step[] {
     });
   }
 
-  // gather
+  // gather: branch results STAY visible (copy-to-center model), merge addends slide in
   const shownGather = new Set(shown);
-  // Remove left result cells
-  p1Digits.forEach((_, pl) => shownGather.delete(`left-r-${pl}`));
-  // Remove right result cells (including zero-placeholder)
-  shownGather.delete('right-r-0');
-  p2ShiftedDigits.slice(1).forEach((_, i) => shownGather.delete(`right-r-${i + 1}`));
-  // Add merge addend cells
+  // Add merge addend cells (branch results remain in shown — they stay visible)
   mergeAD.forEach((_, pl) => shownGather.add(`merge-a-${pl}`));
   mergeBD.forEach((_, pl) => shownGather.add(`merge-b-${pl}`));
   shownGather.add('merge-op');

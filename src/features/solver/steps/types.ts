@@ -28,6 +28,7 @@ export interface Cell {
   highlight?: Highlight;
   superscript?: boolean; // carry digit drawn small, above the column
   layoutId?: string;    // shared layoutId for Framer Motion gather animation
+  enterFrom?: 'left' | 'right'; // directional slide-in for gather copy-to-center
 }
 
 export interface BoardState {
