@@ -7,6 +7,7 @@ import {
 import { Home } from './routes/Home';
 import { LearnStages } from './routes/LearnStages';
 import { Solve } from './routes/Solve';
+import { Progress } from './routes/Progress';
 
 const rootRoute = createRootRoute({ component: () => <Outlet /> });
 
@@ -28,7 +29,13 @@ const solveStageRoute = createRoute({
   component: Solve,
 });
 
-const routeTree = rootRoute.addChildren([indexRoute, learnRoute, solveStageRoute]);
+const progressRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/progress',
+  component: Progress,
+});
+
+const routeTree = rootRoute.addChildren([indexRoute, learnRoute, solveStageRoute, progressRoute]);
 
 export const router = createRouter({ routeTree });
 

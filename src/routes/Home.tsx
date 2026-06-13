@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { Plus, Minus, X } from 'lucide-react';
+import { Plus, Minus, X, BarChart2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const OPS = [
@@ -21,6 +21,14 @@ export function Home() {
             </Button>
           </Link>
         ))}
+      </div>
+      <div className="mt-6">
+        <Link to="/progress">
+          <Button variant="ghost" className="w-full gap-2">
+            <BarChart2 className="size-5" />
+            학습 진도 보기
+          </Button>
+        </Link>
       </div>
     </main>
   );
