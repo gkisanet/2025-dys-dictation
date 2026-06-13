@@ -1,4 +1,4 @@
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from 'framer-motion';
 import type { BoardState, Cell, Highlight, Region } from './steps/types';
 
 const HL_CLASS: Record<NonNullable<Highlight>, string> = {
@@ -8,9 +8,16 @@ const HL_CLASS: Record<NonNullable<Highlight>, string> = {
 };
 
 function cellClass(cell: Cell): string {
-  const base = cell.superscript
-    ? 'flex items-start justify-center text-sm text-red-600 h-4'
-    : 'flex items-end justify-center text-3xl font-bold h-12';
+  let base: string;
+  if (cell.superscript) {
+    if (cell.role === 'borrow') {
+      base = 'flex items-start justify-center text-sm text-blue-600 h-4';
+    } else {
+      base = 'flex items-start justify-center text-sm text-red-600 h-4';
+    }
+  } else {
+    base = 'flex items-end justify-center text-3xl font-bold h-12';
+  }
   const hl = cell.highlight ? HL_CLASS[cell.highlight] : '';
   const role = cell.role === 'operator' ? 'text-muted-foreground' : '';
   return `${base} ${hl} ${role}`.trim();
@@ -56,6 +63,7 @@ function RegionGrid({
 
   return (
     <div
+      data-region={region}
       className="grid gap-x-1.5 gap-y-0.5 font-mono"
       style={{ gridTemplateColumns: `repeat(${maxPlace + 1}, 2.5rem)` }}
     >
@@ -64,6 +72,7 @@ function RegionGrid({
           <motion.div
             key={cell.id}
             layout={!reduced}
+            layoutId={cell.layoutId}
             {...enter}
             transition={{ duration: 0.4, ease: [0.2, 0.8, 0.3, 1] }}
             data-cell-id={cell.id}
@@ -98,11 +107,21 @@ function RegionGrid({
 
 export function WorksheetRenderer({ board }: { board: BoardState }) {
   const reduced = useReducedMotion() ?? false;
+  const has = (r: Region) => board.regions.includes(r);
+
   return (
-    <div className="flex flex-col items-center gap-2" data-testid="worksheet">
-      {board.regions.map((region) => (
-        <RegionGrid key={region} board={board} region={region} reduced={reduced} />
-      ))}
-    </div>
+    <LayoutGroup>
+      <div className="flex flex-col items-center gap-3" data-testid="worksheet">
+        {has('top') && <RegionGrid region="top" board={board} reduced={reduced} />}
+        {has('main') && <RegionGrid region="main" board={board} reduced={reduced} />}
+        {(has('left') || has('right')) && (
+          <div className="flex items-start justify-center gap-8" data-region-row>
+            {has('left') && <RegionGrid region="left" board={board} reduced={reduced} />}
+            {has('right') && <RegionGrid region="right" board={board} reduced={reduced} />}
+          </div>
+        )}
+        {has('merge') && <RegionGrid region="merge" board={board} reduced={reduced} />}
+      </div>
+    </LayoutGroup>
   );
 }

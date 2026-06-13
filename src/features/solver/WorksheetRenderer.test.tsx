@@ -4,6 +4,18 @@ import { WorksheetRenderer } from './WorksheetRenderer';
 import { sampleAdditionBoard } from './sampleBoards';
 import type { BoardState } from './steps/types';
 
+// Multi-region board: top, left, right, merge with one visible cell each
+const multiRegionBoard: BoardState = {
+  regions: ['top', 'left', 'right', 'merge'],
+  cells: [
+    { id: 'top-0', region: 'top',   row: 0, place: 0, value: '8', role: 'operand',  visible: true },
+    { id: 'lft-0', region: 'left',  row: 0, place: 0, value: '2', role: 'result',   visible: true, layoutId: 'p1-0' },
+    { id: 'rgt-0', region: 'right', row: 0, place: 0, value: '4', role: 'result',   visible: true, layoutId: 'p2-0' },
+    { id: 'mrg-0', region: 'merge', row: 0, place: 0, value: '6', role: 'operand',  visible: true },
+  ],
+  dividers: [],
+};
+
 describe('WorksheetRenderer', () => {
   it('renders only visible cells with their values', () => {
     render(<WorksheetRenderer board={sampleAdditionBoard} />);
@@ -24,6 +36,39 @@ describe('WorksheetRenderer', () => {
     // '2' from the hidden result must not appear (operand '2' lives in tens of 24)
     expect(screen.queryByText('2')).toBeInTheDocument(); // the '2' of 24 is visible
     expect(screen.getAllByText('2')).toHaveLength(1);     // hidden result '2' not rendered
+  });
+});
+
+describe('WorksheetRenderer multi-region', () => {
+  it('renders left and right cells side-by-side in a row wrapper', () => {
+    const { container } = render(<WorksheetRenderer board={multiRegionBoard} />);
+    const rowWrapper = container.querySelector('[data-region-row]') as HTMLElement;
+    expect(rowWrapper).toBeInTheDocument();
+    // Both left and right grids should be descendants of the row wrapper
+    const leftGrid  = rowWrapper.querySelector('[data-region="left"]');
+    const rightGrid = rowWrapper.querySelector('[data-region="right"]');
+    expect(leftGrid).toBeInTheDocument();
+    expect(rightGrid).toBeInTheDocument();
+    // top and merge are NOT inside the row wrapper
+    const topGrid   = container.querySelector('[data-region="top"]');
+    const mergeGrid = container.querySelector('[data-region="merge"]');
+    expect(rowWrapper.contains(topGrid)).toBe(false);
+    expect(rowWrapper.contains(mergeGrid)).toBe(false);
+  });
+
+  it('renders cell values from all four regions', () => {
+    render(<WorksheetRenderer board={multiRegionBoard} />);
+    expect(screen.getByText('8')).toBeInTheDocument();
+    expect(screen.getByText('2')).toBeInTheDocument();
+    expect(screen.getByText('4')).toBeInTheDocument();
+    expect(screen.getByText('6')).toBeInTheDocument();
+  });
+
+  it('cell with layoutId still renders its value', () => {
+    render(<WorksheetRenderer board={multiRegionBoard} />);
+    // The '2' in left region has layoutId='p1-0'; it must still render
+    const cell = screen.getByText('2', { selector: '[data-cell-id="lft-0"]' });
+    expect(cell).toBeInTheDocument();
   });
 });
 

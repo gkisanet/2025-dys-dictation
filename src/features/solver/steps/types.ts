@@ -26,6 +26,7 @@ export interface Cell {
   visible: boolean;
   highlight?: Highlight;
   superscript?: boolean; // carry digit drawn small, above the column
+  layoutId?: string;    // shared layoutId for Framer Motion gather animation
 }
 
 export interface BoardState {
