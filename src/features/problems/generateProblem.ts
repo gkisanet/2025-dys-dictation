@@ -7,6 +7,7 @@ export type Pattern =
   | 'sub-noborrow'
   | 'sub-borrow'
   | 'sub-3digit'
+  | 'mul-2x1'
   | 'mul-byten'
   | 'mul-2x2';
 
@@ -61,6 +62,11 @@ export function generateProblem(pattern: Pattern): Problem {
       const a = r(300, 999);
       const b = r(100, a);
       return { operation: 'sub', operands: [a, b] };
+    }
+
+    case 'mul-2x1': {
+      // a is 2-digit (11..99), b is 1-digit (2..9).
+      return { operation: 'mul', operands: [r(11, 99), r(2, 9)] };
     }
 
     case 'mul-byten': {

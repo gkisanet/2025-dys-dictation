@@ -1,44 +1,35 @@
 import type { BoardState, Cell, Highlight, Problem, Step } from './types';
 import { onesFirst, multiplyByDigit } from './mathColumns';
 
-/** Single-region place-zero animation for a × (multiple of 10), e.g. 18 × 20. */
-function buildMultiplyByTen(problem: Problem): Step[] {
+// ── Mode 1: 2-digit × 1-digit ────────────────────────────────────────────────
+
+function buildMul2x1(problem: Problem): Step[] {
   const [a, b] = problem.operands;
-  const tensB = b / 10; // b must be divisible by 10
   const aD = onesFirst(a);
-  const bD = onesFirst(b); // e.g. [0, 2] for 20
-
-  const p = multiplyByDigit(a, tensB); // a × tensB
+  const p = multiplyByDigit(a, b);
   const final = a * b;
-
-  // Result digits ones-first: ones digit is place-zero (0), followed by a×tensB digits
-  const shiftedDigits = onesFirst(final); // e.g. [0, 6, 3] for 360
 
   const cells: Cell[] = [];
 
-  // Row 0: carry row (no visible carries in this layout at setup)
   // Row 1: a operand
   aD.forEach((d, pl) =>
     cells.push({ id: `main-a-${pl}`, region: 'main', row: 1, place: pl, value: String(d), role: 'operand', visible: false })
   );
-  // Row 2: × b (operator + b digits)
-  bD.forEach((d, pl) =>
-    cells.push({ id: `main-b-${pl}`, region: 'main', row: 2, place: pl, value: String(d), role: 'operand', visible: false })
-  );
+  // Row 2: × b (operator + b digit)
   cells.push({ id: 'main-op', region: 'main', row: 2, place: aD.length, value: '×', role: 'operator', visible: false });
+  cells.push({ id: 'main-b', region: 'main', row: 2, place: 0, value: String(b), role: 'operand', visible: false });
 
-  // Carry marks above each result column (skip col 0 — always no carry for the place-zero)
-  for (let i = 1; i < aD.length + 1; i++) {
-    const carryVal = p.carryInto[i - 1] ?? 0;
-    if (carryVal > 0) {
-      cells.push({ id: `main-c-${i}`, region: 'main', row: 0, place: i, value: String(carryVal), role: 'carry', superscript: true, visible: false });
+  // Row 0: carry marks (skip col 0 — always 0)
+  for (let i = 1; i < aD.length; i++) {
+    if (p.carryInto[i] > 0) {
+      cells.push({ id: `main-c-${i}`, region: 'main', row: 0, place: i, value: String(p.carryInto[i]), role: 'carry', superscript: true, visible: false });
     }
   }
 
-  // Row 3 result: ones is the zero-placeholder, rest are shifted product digits
-  cells.push({ id: 'main-r-0', region: 'main', row: 3, place: 0, value: '0', role: 'zero-placeholder', visible: false });
-  shiftedDigits.slice(1).forEach((d, i) =>
-    cells.push({ id: `main-r-${i + 1}`, region: 'main', row: 3, place: i + 1, value: String(d), role: 'result', visible: false })
+  // Row 3: result digits (ones-first). If leading carry, add one extra digit.
+  const resultDigits = p.resultDigit; // ones-first
+  resultDigits.forEach((d, pl) =>
+    cells.push({ id: `main-r-${pl}`, region: 'main', row: 3, place: pl, value: String(d), role: 'result', visible: false })
   );
 
   const dividers = [{ region: 'main' as const, row: 2 }];
@@ -54,8 +45,8 @@ function buildMultiplyByTen(problem: Problem): Step[] {
 
   // 1. setup: reveal a and × b
   aD.forEach((_, pl) => shown.add(`main-a-${pl}`));
-  bD.forEach((_, pl) => shown.add(`main-b-${pl}`));
   shown.add('main-op');
+  shown.add('main-b');
   steps.push({
     id: 'setup',
     kind: 'setup',
@@ -63,45 +54,56 @@ function buildMultiplyByTen(problem: Problem): Step[] {
     board: boardFrom(shown),
   });
 
-  // 2. place-zero: reveal the ones result cell (zero placeholder)
-  shown.add('main-r-0');
-  steps.push({
-    id: 'place-zero',
-    kind: 'place-zero',
-    narration: `${b}는 ×10이라 일의 자리에 0을 먼저 놓아요.`,
-    board: boardFrom(shown, { 'main-r-0': 'zero' }),
-  });
+  // 2–5. digit-by-digit ones then tens (inline loop)
+  for (let i = 0; i < aD.length; i++) {
+    const carryInto = p.carryInto[i] ?? 0;
+    const colValue = aD[i] * b + carryInto;
+    const resultDigit = colValue % 10;
+    const carryOut = Math.floor(colValue / 10);
 
-  // 3. ask: quiz a × tensB, highlight the b tens digit
-  steps.push({
-    id: 'ask',
-    kind: 'digit-op',
-    narration: `이제 ${a} × ${tensB} 를 구해 그 앞에 놓아요.`,
-    board: boardFrom(shown, { 'main-r-0': 'zero', [`main-b-1`]: 'now' }),
-    quiz: {
-      prompt: `${a} × ${tensB} = ?`,
-      answer: p.product,
-      hints: [
-        `${a}에 ${tensB}를 곱해요.`,
-        `${a} × ${tensB} 를 계산해보세요.`,
-      ],
-    },
-  });
+    const carryPromptPart = carryInto > 0 ? ` + ${carryInto}` : '';
+    const prompt = `${aD[i]} × ${b}${carryPromptPart} = ?`;
+    const aId = `main-a-${i}`;
+    const bId = `main-b`;
+    const askHi: Record<string, NonNullable<Highlight>> = { [aId]: 'now', [bId]: 'now' };
+    if (carryInto > 0 && cells.some(c => c.id === `main-c-${i}`)) {
+      askHi[`main-c-${i}`] = 'now';
+    }
 
-  // 4. write: reveal shifted product digits + carry marks
-  shiftedDigits.slice(1).forEach((_, i) => shown.add(`main-r-${i + 1}`));
-  for (let i = 1; i < aD.length + 1; i++) {
-    const carryVal = p.carryInto[i - 1] ?? 0;
-    if (carryVal > 0) shown.add(`main-c-${i}`);
+    steps.push({
+      id: `${i === 0 ? 'ones' : 'tens'}-ask`,
+      kind: 'digit-op',
+      narration: `${aD[i]}의 자리: ${aD[i]} × ${b}${carryPromptPart} = ${colValue}.`,
+      board: boardFrom(shown, askHi),
+      quiz: {
+        prompt,
+        answer: colValue,
+        hints: [
+          `${aD[i]}에 ${b}를 곱해요${carryInto > 0 ? `, 올림 ${carryInto}도 더해요` : ''}.`,
+          `${aD[i]} × ${b}${carryPromptPart} 를 계산해보세요.`,
+        ],
+      },
+    });
+
+    shown.add(`main-r-${i}`);
+    if (carryOut > 0) {
+      if (i + 1 < aD.length) {
+        const nextCId = `main-c-${i + 1}`;
+        if (cells.some(c => c.id === nextCId)) shown.add(nextCId);
+      } else {
+        shown.add(`main-r-${aD.length}`);
+      }
+    }
+
+    steps.push({
+      id: `${i === 0 ? 'ones' : 'tens'}-write`,
+      kind: 'sum',
+      narration: carryOut > 0 ? `${colValue} → ${resultDigit} 쓰고 ${carryOut} 올림.` : `${colValue} 를 씁니다.`,
+      board: boardFrom(shown),
+    });
   }
-  steps.push({
-    id: 'write',
-    kind: 'sum',
-    narration: `${a}×${tensB}=${p.product}, 뒤에 0 붙여 ${final}.`,
-    board: boardFrom(shown, { 'main-r-0': 'zero' }),
-  });
 
-  // 5. result
+  // 6. result
   steps.push({
     id: 'result',
     kind: 'result',
@@ -112,40 +114,187 @@ function buildMultiplyByTen(problem: Problem): Step[] {
   return steps;
 }
 
-export function buildMultiplication(problem: Problem): Step[] {
+// ── Mode 2: 2-digit × multiple-of-10 ────────────────────────────────────────
+
+function buildMultiplyByTen(problem: Problem): Step[] {
   const [a, b] = problem.operands;
-  const bD = onesFirst(b);       // b digits ones-first
-  const onesB = bD[0];           // ones digit of b
-  const tensB = bD[1] ?? 0;      // tens digit of b
-
-  if (onesB === 0) return buildMultiplyByTen(problem);
+  const tensB = b / 10;
   const aD = onesFirst(a);
-
-  // Partial products
-  const p1 = multiplyByDigit(a, onesB); // a × onesB
-  const p2 = multiplyByDigit(a, tensB); // a × tensB (×10 applied via place offset)
-  const P1 = p1.product;                // e.g. 72
-  const P2 = p2.product;                // e.g. 36 (×10 = 360 in merge)
+  const bD = onesFirst(b); // e.g. [0, 2] for 20
+  const p = multiplyByDigit(a, tensB);
   const final = a * b;
 
-  // Digit sources for branch result and merge addend cells — MUST match exactly
-  const p1Digits = onesFirst(P1);         // e.g. [2,7] — shared source for left result + merge addend-1
-  const p2ShiftedDigits = onesFirst(P2 * 10); // e.g. [0,6,3] — shared source for right result + merge addend-2
+  const cells: Cell[] = [];
 
-  // Final addition: P1 + P2*10
-  const mergeAD = p1Digits;              // same as onesFirst(P1)
-  const mergeBD = p2ShiftedDigits;       // same as onesFirst(P2*10)
-  // Compute carry for the merge addition
+  // Row 1: a operand (place 0..aD.length-1)
+  aD.forEach((d, pl) =>
+    cells.push({ id: `main-a-${pl}`, region: 'main', row: 1, place: pl, value: String(d), role: 'operand', visible: false })
+  );
+  // Row 2: × b (operator + b digits)
+  bD.forEach((d, pl) =>
+    cells.push({ id: `main-b-${pl}`, region: 'main', row: 2, place: pl, value: String(d), role: 'operand', visible: false })
+  );
+  cells.push({ id: 'main-op', region: 'main', row: 2, place: aD.length, value: '×', role: 'operator', visible: false });
+
+  // Row 0: carry marks above shifted columns (index 1..aD.length)
+  // The digit-by-digit loop uses aD indices (0=ones col of a, 1=tens col of a),
+  // but in the shifted layout the actual place is index+shift (shift=1).
+  // We store carry cells keyed by the a-digit index (not the shifted place),
+  // using id `main-c-${i}` for the cell above a-digit col i, placed at `place i+1`.
+  for (let i = 1; i < aD.length; i++) {
+    if (p.carryInto[i] > 0) {
+      cells.push({ id: `main-c-${i}`, region: 'main', row: 0, place: i + 1, value: String(p.carryInto[i]), role: 'carry', superscript: true, visible: false });
+    }
+  }
+
+  // Row 3: result digits (shifted by 1). Place 0 = zero-placeholder.
+  cells.push({ id: 'main-r-0', region: 'main', row: 3, place: 0, value: '0', role: 'zero-placeholder', visible: false });
+  // The a × tensB product digits occupy places 1..N
+  const prodDigits = p.resultDigit; // ones-first
+  prodDigits.forEach((d, i) =>
+    cells.push({ id: `main-r-${i + 1}`, region: 'main', row: 3, place: i + 1, value: String(d), role: 'result', visible: false })
+  );
+
+  const dividers = [{ region: 'main' as const, row: 2 }];
+
+  const boardFrom = (shown: Set<string>, hi: Record<string, NonNullable<Highlight>> = {}): BoardState => ({
+    regions: ['main'],
+    cells: cells.map((c) => ({ ...c, visible: shown.has(c.id), highlight: hi[c.id] ?? null })),
+    dividers,
+  });
+
+  const steps: Step[] = [];
+  const shown = new Set<string>();
+
+  // 1. setup
+  aD.forEach((_, pl) => shown.add(`main-a-${pl}`));
+  bD.forEach((_, pl) => shown.add(`main-b-${pl}`));
+  shown.add('main-op');
+  steps.push({
+    id: 'setup',
+    kind: 'setup',
+    narration: `${a} × ${b}를 세로로 써요.`,
+    board: boardFrom(shown),
+  });
+
+  // 2. place-zero
+  shown.add('main-r-0');
+  steps.push({
+    id: 'place-zero',
+    kind: 'place-zero',
+    narration: `${b}는 ×10이라 일의 자리에 0을 먼저 놓아요.`,
+    board: boardFrom(shown, { 'main-r-0': 'zero' }),
+  });
+
+  // 3–6. digit-by-digit for a × tensB, SHIFTED by 1
+  // We need a custom prefix helper here: the b-digit to highlight is `main-b-1` (tens digit of b),
+  // and we use `main-b` convention... but in byten layout `main-b-1` is the tens digit of b.
+  // appendDigitByDigitSteps uses `${prefix}-b` for the multiplier highlight.
+  // In byten, there's no single `main-b` cell — instead the tens digit is `main-b-1`.
+  // We handle this inline for byten since the convention differs.
+
+  for (let i = 0; i < aD.length; i++) {
+    const carryInto = p.carryInto[i] ?? 0;
+    const colValue = aD[i] * tensB + carryInto;
+    const resultDigit = colValue % 10;
+    const carryOut = Math.floor(colValue / 10);
+    const place = i + 1; // shifted
+
+    const carryPromptPart = carryInto > 0 ? ` + ${carryInto}` : '';
+    const prompt = `${aD[i]} × ${tensB}${carryPromptPart} = ?`;
+
+    const aId = `main-a-${i}`;
+    const bId = `main-b-1`; // tens digit of b in byten layout
+    const askHi: Record<string, NonNullable<Highlight>> = { [aId]: 'now', [bId]: 'now' };
+    if (carryInto > 0 && cells.some(c => c.id === `main-c-${i}`)) {
+      askHi[`main-c-${i}`] = 'now';
+    }
+
+    steps.push({
+      id: `${i === 0 ? 'ones' : 'tens'}-ask`,
+      kind: 'digit-op',
+      narration: `${aD[i]}의 자리: ${aD[i]} × ${tensB}${carryPromptPart} = ${colValue}.`,
+      board: boardFrom(shown, askHi),
+      quiz: {
+        prompt,
+        answer: colValue,
+        hints: [
+          `${aD[i]}에 ${tensB}를 곱해요${carryInto > 0 ? `, 올림 ${carryInto}도 더해요` : ''}.`,
+          `${aD[i]} × ${tensB}${carryPromptPart} 를 계산해보세요.`,
+        ],
+      },
+    });
+
+    // write: reveal result digit at shifted place
+    shown.add(`main-r-${place}`);
+    if (carryOut > 0) {
+      if (i + 1 < aD.length) {
+        const nextCarryId = `main-c-${i + 1}`;
+        if (cells.some(c => c.id === nextCarryId)) shown.add(nextCarryId);
+      } else {
+        // leading digit sits at place = aD.length + 1
+        shown.add(`main-r-${aD.length + 1}`);
+      }
+    }
+
+    const writeNarr =
+      carryOut > 0
+        ? `${colValue} → ${resultDigit} 쓰고 ${carryOut} 올림.`
+        : `${colValue} 를 씁니다.`;
+
+    steps.push({
+      id: `${i === 0 ? 'ones' : 'tens'}-write`,
+      kind: 'sum',
+      narration: writeNarr,
+      board: boardFrom(shown, { 'main-r-0': 'zero' }),
+    });
+  }
+
+  // result
+  steps.push({
+    id: 'result',
+    kind: 'result',
+    narration: `다 곱했어요! ${a} × ${b} = ${final}.`,
+    board: boardFrom(shown),
+  });
+
+  return steps;
+}
+
+// ── Mode 3: 2-digit × 2-digit (distributive tree) ───────────────────────────
+
+export function buildMultiplication(problem: Problem): Step[] {
+  const [a, b] = problem.operands;
+  const bD = onesFirst(b);
+  const onesB = bD[0];
+  const tensB = bD[1] ?? 0;
+
+  // Dispatch on b
+  if (onesB === 0) return buildMultiplyByTen(problem);
+  if (bD.length === 1 || tensB === 0) return buildMul2x1(problem);
+
+  // --- Mode 3: 2-digit × 2-digit ---
+  const aD = onesFirst(a);
+  const p1 = multiplyByDigit(a, onesB);
+  const p2 = multiplyByDigit(a, tensB);
+  const P1 = p1.product;
+  const P2 = p2.product;
+  const final = a * b;
+
+  const p1Digits = onesFirst(P1);
+  const p2ShiftedDigits = onesFirst(P2 * 10);
+
+  // Merge addition arithmetic
+  const mergeAD = p1Digits;
+  const mergeBD = p2ShiftedDigits;
   const mergeCols = Math.max(mergeAD.length, mergeBD.length);
   const mergeCarryIn: number[] = [];
-  const mergeColSum: number[] = [];
   const mergeResultDigit: number[] = [];
   const mergeCarryOut: number[] = [];
   let carry = 0;
   for (let i = 0; i < mergeCols; i++) {
     mergeCarryIn[i] = carry;
     const s = (mergeAD[i] ?? 0) + (mergeBD[i] ?? 0) + carry;
-    mergeColSum[i] = s;
     mergeResultDigit[i] = s % 10;
     carry = Math.floor(s / 10);
     mergeCarryOut[i] = carry;
@@ -158,7 +307,7 @@ export function buildMultiplication(problem: Problem): Step[] {
 
   const cells: Cell[] = [];
 
-  // TOP region: a (rows 0), × b (row 1)
+  // TOP region
   aD.forEach((d, p) =>
     cells.push({ id: `top-a-${p}`, region: 'top', row: 0, place: p, value: String(d), role: 'operand', visible: false })
   );
@@ -167,57 +316,58 @@ export function buildMultiplication(problem: Problem): Step[] {
   );
   cells.push({ id: 'top-op', region: 'top', row: 1, place: aD.length, value: '×', role: 'operator', visible: false });
 
-  // LEFT region: a × onesB  (row 0 carry, row 1 a, row 2 × onesB, div@2, row 3 P1 digits)
-  aD.forEach((d, p) =>
-    cells.push({ id: `left-a-${p}`, region: 'left', row: 1, place: p, value: String(d), role: 'operand', visible: false })
+  // LEFT region: a × onesB (shift=0)
+  // Row 1: a
+  aD.forEach((d, pl) =>
+    cells.push({ id: `left-a-${pl}`, region: 'left', row: 1, place: pl, value: String(d), role: 'operand', visible: false })
   );
+  // Row 2: × onesB
   cells.push({ id: 'left-op', region: 'left', row: 2, place: aD.length, value: '×', role: 'operator', visible: false });
-  cells.push({ id: `left-b`, region: 'left', row: 2, place: 0, value: String(onesB), role: 'operand', visible: false });
-  // carry marks above each left column (skip col 0 which always has carry 0)
-  for (let i = 0; i < aD.length; i++) {
+  cells.push({ id: 'left-b', region: 'left', row: 2, place: 0, value: String(onesB), role: 'operand', visible: false });
+  // Row 0: carries for left (skip i=0)
+  for (let i = 1; i < aD.length; i++) {
     if (p1.carryInto[i] > 0) {
       cells.push({ id: `left-c-${i}`, region: 'left', row: 0, place: i, value: String(p1.carryInto[i]), role: 'carry', superscript: true, visible: false });
     }
   }
-  // P1 result digits with layoutIds for gather — use p1Digits so layoutIds match merge addend-1
-  p1Digits.forEach((d, p) =>
-    cells.push({ id: `left-r-${p}`, region: 'left', row: 3, place: p, value: String(d), role: 'result', visible: false, layoutId: `p1-${p}` })
+  // Row 3: P1 result digits with layoutIds
+  p1Digits.forEach((d, pl) =>
+    cells.push({ id: `left-r-${pl}`, region: 'left', row: 3, place: pl, value: String(d), role: 'result', visible: false, layoutId: `p1-${pl}` })
   );
 
-  // RIGHT region: a × tensB  (row 0 carry, row 1 a, row 2 × tensB, div@2, row 3 P2 digits + place-zero)
-  aD.forEach((d, p) =>
-    cells.push({ id: `right-a-${p}`, region: 'right', row: 1, place: p + 1, value: String(d), role: 'operand', visible: false })
+  // RIGHT region: a × tensB (shift=1, place-zero at place 0)
+  // Row 1: a (shifted right by 1)
+  aD.forEach((d, pl) =>
+    cells.push({ id: `right-a-${pl}`, region: 'right', row: 1, place: pl + 1, value: String(d), role: 'operand', visible: false })
   );
+  // Row 2: × tensB
   cells.push({ id: 'right-op', region: 'right', row: 2, place: aD.length + 1, value: '×', role: 'operator', visible: false });
-  cells.push({ id: `right-b`, region: 'right', row: 2, place: 1, value: String(tensB), role: 'operand', visible: false });
-  // carry marks for right columns (shifted by 1 for the ×10 place offset)
-  for (let i = 0; i < aD.length; i++) {
+  cells.push({ id: 'right-b', region: 'right', row: 2, place: 1, value: String(tensB), role: 'operand', visible: false });
+  // Row 0: carries for right (skip i=0); placed at i+1 (shifted)
+  for (let i = 1; i < aD.length; i++) {
     if (p2.carryInto[i] > 0) {
       cells.push({ id: `right-c-${i}`, region: 'right', row: 0, place: i + 1, value: String(p2.carryInto[i]), role: 'carry', superscript: true, visible: false });
     }
   }
-  // P2 result digits: ones place is always 0 (zero-placeholder), higher digits from p2ShiftedDigits
-  // Use p2ShiftedDigits so layoutIds exactly match merge addend-2
-  cells.push({ id: `right-r-0`, region: 'right', row: 3, place: 0, value: '0', role: 'zero-placeholder', visible: false, layoutId: 'p2-0' });
+  // Row 3: P2 result — place 0 is zero-placeholder; digits from p2ShiftedDigits at places 1..N
+  cells.push({ id: 'right-r-0', region: 'right', row: 3, place: 0, value: '0', role: 'zero-placeholder', visible: false, layoutId: 'p2-0' });
   p2ShiftedDigits.slice(1).forEach((d, i) =>
     cells.push({ id: `right-r-${i + 1}`, region: 'right', row: 3, place: i + 1, value: String(d), role: 'result', visible: false, layoutId: `p2-${i + 1}` })
   );
 
-  // MERGE region: row 0 carry, row 1 P1 addend, row 2 + P2 addend, div@2, row 3 final result
-  mergeAD.forEach((d, p) =>
-    cells.push({ id: `merge-a-${p}`, region: 'merge', row: 1, place: p, value: String(d), role: 'partial', visible: false, layoutId: `p1-${p}` })
+  // MERGE region
+  mergeAD.forEach((d, pl) =>
+    cells.push({ id: `merge-a-${pl}`, region: 'merge', row: 1, place: pl, value: String(d), role: 'partial', visible: false, layoutId: `p1-${pl}` })
   );
-  mergeBD.forEach((d, p) =>
-    cells.push({ id: `merge-b-${p}`, region: 'merge', row: 2, place: p, value: String(d), role: 'partial', visible: false, layoutId: `p2-${p}` })
+  mergeBD.forEach((d, pl) =>
+    cells.push({ id: `merge-b-${pl}`, region: 'merge', row: 2, place: pl, value: String(d), role: 'partial', visible: false, layoutId: `p2-${pl}` })
   );
   cells.push({ id: 'merge-op', region: 'merge', row: 2, place: mergeBD.length, value: '+', role: 'operator', visible: false });
-  // Carry marks for merge addition
   for (let i = 1; i < mergeCols; i++) {
     if ((mergeCarryIn[i] ?? 0) > 0) {
       cells.push({ id: `merge-c-${i}`, region: 'merge', row: 0, place: i, value: String(mergeCarryIn[i]), role: 'carry', superscript: true, visible: false });
     }
   }
-  // Final result digits
   for (let i = 0; i < mergeResultCols; i++) {
     cells.push({ id: `merge-r-${i}`, region: 'merge', row: 3, place: i, value: String(mergeResultDigit[i]), role: 'result', visible: false });
   }
@@ -235,14 +385,14 @@ export function buildMultiplication(problem: Problem): Step[] {
     dividers,
   });
 
-  // ── Build steps ─────────────────────────────────────────────────────────
+  // ── Build steps ──────────────────────────────────────────────────────────
 
   const steps: Step[] = [];
   const shown = new Set<string>();
 
-  // 1. setup: show top region
-  aD.forEach((_, p) => shown.add(`top-a-${p}`));
-  bD.forEach((_, p) => shown.add(`top-b-${p}`));
+  // 1. setup
+  aD.forEach((_, pl) => shown.add(`top-a-${pl}`));
+  bD.forEach((_, pl) => shown.add(`top-b-${pl}`));
   shown.add('top-op');
   steps.push({
     id: 'setup', kind: 'setup',
@@ -250,7 +400,7 @@ export function buildMultiplication(problem: Problem): Step[] {
     board: boardFrom(shown),
   });
 
-  // 2. decompose: highlight b digits, quiz onesB
+  // 2. decompose
   steps.push({
     id: 'decompose', kind: 'decompose',
     narration: `${b}는 ${tensB * 10}과 ${onesB}가 합쳐진 수. ${a}×${onesB} 와 ${a}×${tensB * 10} 으로 나눠 곱한 뒤 더해요.`,
@@ -258,76 +408,136 @@ export function buildMultiplication(problem: Problem): Step[] {
     quiz: { prompt: `${b} = ${tensB * 10} + ?`, answer: onesB, hints: [`${b}의 일의 자리를 생각해보세요.`, `${b} - ${tensB * 10} = ?`] },
   });
 
-  // 3. left-ask: reveal left a and × onesB, quiz P1
-  aD.forEach((_, p) => shown.add(`left-a-${p}`));
+  // 3. Reveal left a and × onesB operand cells (before digit-by-digit steps)
+  aD.forEach((_, pl) => shown.add(`left-a-${pl}`));
   shown.add('left-op');
   shown.add('left-b');
-  steps.push({
-    id: 'left-ask', kind: 'partial',
-    narration: `왼쪽: ${a} × ${onesB}를 계산해요.`,
-    board: boardFrom(shown),
-    quiz: { prompt: `${a} × ${onesB} = ?`, answer: P1, hints: [`${a}에 ${onesB}를 곱해요.`, `${a} × ${onesB} 를 계산해보세요.`] },
-  });
 
-  // 4. left-write: reveal left divider + P1 digits + carries
-  p1Digits.forEach((_, p) => shown.add(`left-r-${p}`));
+  // 4–7. LEFT digit-by-digit steps: left-ones-ask, left-ones-write, left-tens-ask, left-tens-write
+  // We build these manually (like appendDigitByDigitSteps) but inline for left, using prefix='left', idPrefix='left-'
   for (let i = 0; i < aD.length; i++) {
-    if (p1.carryInto[i] > 0) shown.add(`left-c-${i}`);
-  }
-  const leftNarr = aD.map((d, i) => {
-    const carry = p1.carryInto[i];
-    const s = d * onesB + carry;
-    return carry > 0
-      ? `${d}×${onesB}+${carry}=${s} → ${s % 10}${Math.floor(s / 10) > 0 ? ', 올림' + Math.floor(s / 10) : ''}`
-      : `${d}×${onesB}=${s}`;
-  }).join('; ');
-  steps.push({
-    id: 'left-write', kind: 'sum',
-    narration: `${leftNarr} → ${P1}.`,
-    board: boardFrom(shown),
-  });
+    const carryInto = p1.carryInto[i] ?? 0;
+    const colValue = aD[i] * onesB + carryInto;
+    const resultDigit = colValue % 10;
+    const carryOut = Math.floor(colValue / 10);
 
-  // 5. right-zero: reveal right a, × tensB, divider, and the place-zero cell
-  aD.forEach((_, p) => shown.add(`right-a-${p}`));
+    const carryPromptPart = carryInto > 0 ? ` + ${carryInto}` : '';
+    const prompt = `${aD[i]} × ${onesB}${carryPromptPart} = ?`;
+    const aId = `left-a-${i}`;
+    const bId = `left-b`;
+    const askHi: Record<string, NonNullable<Highlight>> = { [aId]: 'now', [bId]: 'now' };
+    if (carryInto > 0 && cells.some(c => c.id === `left-c-${i}`)) {
+      askHi[`left-c-${i}`] = 'now';
+    }
+
+    steps.push({
+      id: `left-${i === 0 ? 'ones' : 'tens'}-ask`,
+      kind: 'digit-op',
+      narration: `왼쪽 ${i === 0 ? '일' : '십'}의 자리: ${aD[i]} × ${onesB}${carryPromptPart} = ${colValue}.`,
+      board: boardFrom(shown, askHi),
+      quiz: {
+        prompt,
+        answer: colValue,
+        hints: [
+          `${aD[i]}에 ${onesB}를 곱해요${carryInto > 0 ? `, 올림 ${carryInto}도 더해요` : ''}.`,
+          `${aD[i]} × ${onesB}${carryPromptPart} 를 계산해보세요.`,
+        ],
+      },
+    });
+
+    // write: reveal left-r-${i} (place = i, shift=0)
+    shown.add(`left-r-${i}`);
+    if (carryOut > 0) {
+      if (i + 1 < aD.length) {
+        const nextCId = `left-c-${i + 1}`;
+        if (cells.some(c => c.id === nextCId)) shown.add(nextCId);
+      } else {
+        // leading digit
+        shown.add(`left-r-${aD.length}`);
+      }
+    }
+
+    steps.push({
+      id: `left-${i === 0 ? 'ones' : 'tens'}-write`,
+      kind: 'sum',
+      narration: carryOut > 0 ? `${colValue} → ${resultDigit} 쓰고 ${carryOut} 올림.` : `${colValue} 를 씁니다.`,
+      board: boardFrom(shown),
+    });
+  }
+
+  // right-zero: reveal right operand cells and the zero-placeholder
+  aD.forEach((_, pl) => shown.add(`right-a-${pl}`));
   shown.add('right-op');
   shown.add('right-b');
-  shown.add(`right-r-0`);
+  shown.add('right-r-0');
   steps.push({
     id: 'right-zero', kind: 'place-zero',
     narration: `오른쪽: ${a} × ${tensB * 10}. ${tensB * 10}은 ×10이라 일의 자리에 0을 먼저 놓아요.`,
     board: boardFrom(shown, { 'right-r-0': 'zero' }),
   });
 
-  // 6. right-ask: quiz a × tensB
-  steps.push({
-    id: 'right-ask', kind: 'partial',
-    narration: `그 다음 ${a} × ${tensB}를 계산해요.`,
-    board: boardFrom(shown, { 'right-r-0': 'zero' }),
-    quiz: { prompt: `${a} × ${tensB} = ?`, answer: P2, hints: [`${a}에 ${tensB}를 곱해요.`, `${a} × ${tensB} 를 계산해보세요.`] },
-  });
-
-  // 7. right-write: reveal remaining P2 digits + carries (skip index 0 which is the zero-placeholder)
-  p2ShiftedDigits.slice(1).forEach((_, i) => shown.add(`right-r-${i + 1}`));
+  // RIGHT digit-by-digit steps: right-ones-ask, right-ones-write, right-tens-ask, right-tens-write
   for (let i = 0; i < aD.length; i++) {
-    if (p2.carryInto[i] > 0) shown.add(`right-c-${i}`);
-  }
-  steps.push({
-    id: 'right-write', kind: 'sum',
-    narration: `${a}×${tensB}=${P2}, 뒤에 0 붙여 ${P2 * 10}.`,
-    board: boardFrom(shown, { 'right-r-0': 'zero' }),
-  });
+    const carryInto = p2.carryInto[i] ?? 0;
+    const colValue = aD[i] * tensB + carryInto;
+    const resultDigit = colValue % 10;
+    const carryOut = Math.floor(colValue / 10);
+    const place = i + 1; // shifted by 1
 
-  // 8. gather: make left/right result cells invisible, reveal merge addends
-  // Build the shown set without left/right result cells
+    const carryPromptPart = carryInto > 0 ? ` + ${carryInto}` : '';
+    const prompt = `${aD[i]} × ${tensB}${carryPromptPart} = ?`;
+    const aId = `right-a-${i}`;
+    const bId = `right-b`;
+    const askHi: Record<string, NonNullable<Highlight>> = { [aId]: 'now', [bId]: 'now', 'right-r-0': 'zero' };
+    if (carryInto > 0 && cells.some(c => c.id === `right-c-${i}`)) {
+      askHi[`right-c-${i}`] = 'now';
+    }
+
+    steps.push({
+      id: `right-${i === 0 ? 'ones' : 'tens'}-ask`,
+      kind: 'digit-op',
+      narration: `오른쪽 ${i === 0 ? '일' : '십'}의 자리: ${aD[i]} × ${tensB}${carryPromptPart} = ${colValue}.`,
+      board: boardFrom(shown, askHi),
+      quiz: {
+        prompt,
+        answer: colValue,
+        hints: [
+          `${aD[i]}에 ${tensB}를 곱해요${carryInto > 0 ? `, 올림 ${carryInto}도 더해요` : ''}.`,
+          `${aD[i]} × ${tensB}${carryPromptPart} 를 계산해보세요.`,
+        ],
+      },
+    });
+
+    // write: reveal right-r-${place}
+    shown.add(`right-r-${place}`);
+    if (carryOut > 0) {
+      if (i + 1 < aD.length) {
+        const nextCId = `right-c-${i + 1}`;
+        if (cells.some(c => c.id === nextCId)) shown.add(nextCId);
+      } else {
+        // leading digit at place = aD.length + 1
+        shown.add(`right-r-${aD.length + 1}`);
+      }
+    }
+
+    steps.push({
+      id: `right-${i === 0 ? 'ones' : 'tens'}-write`,
+      kind: 'sum',
+      narration: carryOut > 0 ? `${colValue} → ${resultDigit} 쓰고 ${carryOut} 올림.` : `${colValue} 를 씁니다.`,
+      board: boardFrom(shown, { 'right-r-0': 'zero' }),
+    });
+  }
+
+  // gather
   const shownGather = new Set(shown);
-  // Remove left result cells (same set as was added in left-write)
-  p1Digits.forEach((_, p) => shownGather.delete(`left-r-${p}`));
+  // Remove left result cells
+  p1Digits.forEach((_, pl) => shownGather.delete(`left-r-${pl}`));
   // Remove right result cells (including zero-placeholder)
-  shownGather.delete(`right-r-0`);
+  shownGather.delete('right-r-0');
   p2ShiftedDigits.slice(1).forEach((_, i) => shownGather.delete(`right-r-${i + 1}`));
   // Add merge addend cells
-  mergeAD.forEach((_, p) => shownGather.add(`merge-a-${p}`));
-  mergeBD.forEach((_, p) => shownGather.add(`merge-b-${p}`));
+  mergeAD.forEach((_, pl) => shownGather.add(`merge-a-${pl}`));
+  mergeBD.forEach((_, pl) => shownGather.add(`merge-b-${pl}`));
   shownGather.add('merge-op');
   steps.push({
     id: 'gather', kind: 'gather',
@@ -335,7 +545,7 @@ export function buildMultiplication(problem: Problem): Step[] {
     board: boardFrom(shownGather),
   });
 
-  // 9. sum-ask: quiz P1 + P2*10
+  // sum-ask
   steps.push({
     id: 'sum-ask', kind: 'digit-op',
     narration: `${P1} + ${P2 * 10} = ?`,
@@ -343,7 +553,7 @@ export function buildMultiplication(problem: Problem): Step[] {
     quiz: { prompt: `${P1} + ${P2 * 10} = ?`, answer: final, hints: [`${P1}과 ${P2 * 10}을 더해요.`, `${P1} + ${P2 * 10} 를 계산해보세요.`] },
   });
 
-  // 10. result: reveal merge final digits + carries
+  // result
   const shownResult = new Set(shownGather);
   for (let i = 0; i < mergeResultCols; i++) shownResult.add(`merge-r-${i}`);
   for (let i = 1; i < mergeCols; i++) {

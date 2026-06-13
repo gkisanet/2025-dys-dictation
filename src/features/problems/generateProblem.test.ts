@@ -127,6 +127,24 @@ describe('generateProblem — sub-3digit', () => {
   });
 });
 
+describe('generateProblem — mul-2x1', () => {
+  it('first operand is 2-digit (11..99)', () => {
+    times(N, () => {
+      const { operands } = generateProblem('mul-2x1');
+      expect(operands[0]).toBeGreaterThanOrEqual(11);
+      expect(operands[0]).toBeLessThanOrEqual(99);
+    });
+  });
+
+  it('second operand is in range 2..9', () => {
+    times(N, () => {
+      const { operands } = generateProblem('mul-2x1');
+      expect(operands[1]).toBeGreaterThanOrEqual(2);
+      expect(operands[1]).toBeLessThanOrEqual(9);
+    });
+  });
+});
+
 describe('generateProblem — mul-byten', () => {
   it('second operand is always a multiple of 10', () => {
     times(N, () => {

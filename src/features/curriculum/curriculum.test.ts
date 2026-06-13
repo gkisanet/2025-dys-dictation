@@ -29,10 +29,10 @@ describe('curriculum — STAGES', () => {
 });
 
 describe('stagesFor', () => {
-  it('returns the 4 mul stages in order', () => {
+  it('returns the 5 mul stages in order', () => {
     const mulStages = stagesFor('mul');
-    expect(mulStages.length).toBe(4);
-    expect(mulStages.map((s) => s.id)).toEqual(['mul-1', 'mul-2', 'mul-3', 'mul-4']);
+    expect(mulStages.length).toBe(5);
+    expect(mulStages.map((s) => s.id)).toEqual(['mul-1', 'mul-2', 'mul-3', 'mul-4', 'mul-5']);
   });
 
   it('returns 5 add stages', () => {
@@ -53,8 +53,8 @@ describe('getStage', () => {
     expect(getStage('add-3')?.verbosity).toBe('partial');
   });
 
-  it('getStage("mul-1")?.pattern === "mul-byten"', () => {
-    expect(getStage('mul-1')?.pattern).toBe('mul-byten');
+  it('getStage("mul-1")?.pattern === "mul-2x1"', () => {
+    expect(getStage('mul-1')?.pattern).toBe('mul-2x1');
   });
 
   it('getStage("sub-5")?.verbosity === "answer"', () => {

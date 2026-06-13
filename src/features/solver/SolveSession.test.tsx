@@ -19,7 +19,7 @@ async function enterDigits(digits: string) {
 }
 
 describe('SolveSession (18 × 24) multiplication', () => {
-  it('walks to left-ask, submits wrong then 72, continues to sum-ask, submits 432, sees result and restart', async () => {
+  it('walks digit-by-digit through both branches, submits sum-ask 432, sees result', async () => {
     renderWithQuery(<SolveSession problem={{ operation: 'mul', operands: [18, 24] }} />);
 
     // setup step: narration shown, no quiz, can advance
@@ -34,42 +34,61 @@ describe('SolveSession (18 × 24) multiplication', () => {
     expect(screen.getByText(/정답이에요/)).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: '다음' }));
 
-    // left-ask: 18 × 4 = ?
-    expect(screen.getByText('18 × 4 = ?')).toBeInTheDocument();
+    // left-ones-ask: 8 × 4 = ? → answer 32
+    expect(screen.getByText('8 × 4 = ?')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '다음' })).toBeDisabled();
 
-    // submit wrong answer first (entry auto-clears after submit)
-    await enterDigits('70');
+    // submit wrong answer first
+    await enterDigits('30');
     await userEvent.click(screen.getByRole('button', { name: '확인' }));
     expect(screen.getByText(/힌트:/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '다음' })).toBeDisabled();
 
-    // submit correct answer 72 (no need to clear — entry was cleared automatically)
-    await enterDigits('72');
+    // submit correct answer 32
+    await enterDigits('32');
     await userEvent.click(screen.getByRole('button', { name: '확인' }));
     expect(screen.getByText(/정답이에요/)).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: '다음' }));
 
-    // left-write: no quiz, advance through it
+    // left-ones-write: no quiz, advance
     expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: '다음' }));
+
+    // left-tens-ask: 1 × 4 + 3 = ? → answer 7
+    expect(screen.getByText('1 × 4 + 3 = ?')).toBeInTheDocument();
+    await enterDigits('7');
+    await userEvent.click(screen.getByRole('button', { name: '확인' }));
+    expect(screen.getByText(/정답이에요/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: '다음' }));
+
+    // left-tens-write: no quiz, advance
     await userEvent.click(screen.getByRole('button', { name: '다음' }));
 
     // right-zero: no quiz, advance
     await userEvent.click(screen.getByRole('button', { name: '다음' }));
 
-    // right-ask: 18 × 2 = ?
-    expect(screen.getByText('18 × 2 = ?')).toBeInTheDocument();
-    await enterDigits('36');
+    // right-ones-ask: 8 × 2 = ? → answer 16
+    expect(screen.getByText('8 × 2 = ?')).toBeInTheDocument();
+    await enterDigits('16');
     await userEvent.click(screen.getByRole('button', { name: '확인' }));
     await userEvent.click(screen.getByRole('button', { name: '다음' }));
 
-    // right-write: no quiz
+    // right-ones-write: no quiz, advance
     await userEvent.click(screen.getByRole('button', { name: '다음' }));
 
-    // gather: no quiz
+    // right-tens-ask: 1 × 2 + 1 = ? → answer 3
+    expect(screen.getByText('1 × 2 + 1 = ?')).toBeInTheDocument();
+    await enterDigits('3');
+    await userEvent.click(screen.getByRole('button', { name: '확인' }));
     await userEvent.click(screen.getByRole('button', { name: '다음' }));
 
-    // sum-ask: 72 + 360 = ? (appears in quiz prompt)
+    // right-tens-write: no quiz, advance
+    await userEvent.click(screen.getByRole('button', { name: '다음' }));
+
+    // gather: no quiz, advance
+    await userEvent.click(screen.getByRole('button', { name: '다음' }));
+
+    // sum-ask: 72 + 360 = ?
     expect(screen.getAllByText('72 + 360 = ?').length).toBeGreaterThanOrEqual(1);
     await enterDigits('432');
     await userEvent.click(screen.getByRole('button', { name: '확인' }));
