@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { Link } from '@tanstack/react-router';
 import type { Problem, Verbosity } from './steps/types';
 import { buildAddition } from './steps/buildAddition';
@@ -79,7 +79,7 @@ export function SolveSession({
   const progressValue = engine.total > 0 ? (engine.index + 1) / engine.total : 0;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       {/* Step progress + score chip */}
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -89,33 +89,29 @@ export function SolveSession({
         <ProgressBar value={progressValue} label="단계 진행도" />
       </div>
 
-      {/* Worksheet */}
-      <div className="flex min-h-[12rem] items-center justify-center py-2">
-        <WorksheetScaler>
-          <WorksheetRenderer board={current.board} />
-        </WorksheetScaler>
+      {/* Worksheet — plain flex container, no transform/scale so Framer Motion layout animations work */}
+      <div className="flex min-h-[7rem] items-center justify-center overflow-x-auto py-1">
+        <WorksheetRenderer board={current.board} />
       </div>
 
       {/* Narration speech bubble */}
       <NarrationPanel text={current.narration} />
 
-      {/* Quiz panel — sticky bottom on mobile */}
+      {/* Quiz panel — normal flow (no sticky); on-screen keypad means OS keyboard never opens */}
       {current.quiz && (
-        <div className="sticky bottom-20 sm:static">
-          <QuizPanel
-            quiz={current.quiz}
-            feedback={engine.feedback}
-            hint={engine.hint}
-            revealedAnswer={engine.revealedAnswer}
-            onSubmit={engine.submit}
-          />
-        </div>
+        <QuizPanel
+          quiz={current.quiz}
+          feedback={engine.feedback}
+          hint={engine.hint}
+          revealedAnswer={engine.revealedAnswer}
+          onSubmit={engine.submit}
+        />
       )}
 
       {/* Completion card */}
       {engine.isDone && (
         <Card className="overflow-hidden">
-          <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 p-6 text-center">
+          <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 p-4 text-center">
             <div className="mb-2 text-3xl">🎉</div>
             <p className="text-lg font-bold text-emerald-800">잘했어요!</p>
             <p className="mt-1 text-sm text-emerald-700">
@@ -169,39 +165,11 @@ export function SolveSession({
   );
 }
 
-/**
- * Wraps WorksheetRenderer so it never overflows the viewport width.
- * Uses CSS `transform: scale()` with `origin-top center` to shrink wide
- * content (e.g. the 18×24 multiplication tree) to fit narrow phones.
- */
-function WorksheetScaler({ children }: { children: React.ReactNode }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
-  const [scale, setScale] = useState(1);
-
-  useEffect(() => {
-    const el = containerRef.current, inner = contentRef.current;
-    if (!el || !inner) return;
-    const measure = () => {
-      const cw = el.clientWidth, content = inner.scrollWidth;
-      setScale(content > cw ? cw / content : 1);
-    };
-    const obs = new ResizeObserver(measure);
-    obs.observe(el);
-    obs.observe(inner);
-    measure();
-    return () => obs.disconnect();
-  }, []);
-
-  return (
-    <div ref={containerRef} className="flex w-full justify-center overflow-hidden">
-      <div
-        ref={contentRef}
-        className="inline-block w-max"
-        style={{ transformOrigin: 'top center', transform: `scale(${scale})` }}
-      >
-        {children}
-      </div>
-    </div>
-  );
-}
+// WorksheetScaler has been removed. The scale transform broke Framer Motion's
+// layout/layoutId measurements (layout animations compute element positions from
+// the DOM, but transform: scale() shifts the rendered position without updating
+// offsetTop/getBoundingClientRect proportionally, so Framer Motion misplaces
+// animated cells during the gather/glide transition). Instead, WorksheetRenderer
+// cells have been made compact enough (2.25rem columns, text-2xl) to fit a 360px
+// phone without any scaling, and the container uses overflow-x-auto as a safe
+// fallback that does not affect layout measurement.

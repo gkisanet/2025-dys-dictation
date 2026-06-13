@@ -16,7 +16,7 @@ function cellClass(cell: Cell): string {
       base = 'flex items-start justify-center text-sm text-red-600 h-4';
     }
   } else {
-    base = 'flex items-end justify-center text-3xl font-bold h-12';
+    base = 'flex items-end justify-center text-2xl font-bold h-10';
   }
   const hl = cell.highlight ? HL_CLASS[cell.highlight] : '';
   const role = cell.role === 'operator' ? 'text-muted-foreground' : '';
@@ -65,7 +65,7 @@ function RegionGrid({
     <div
       data-region={region}
       className="grid gap-x-1.5 gap-y-0.5 font-mono"
-      style={{ gridTemplateColumns: `repeat(${maxPlace + 1}, 2.5rem)` }}
+      style={{ gridTemplateColumns: `repeat(${maxPlace + 1}, 2.25rem)` }}
     >
       <AnimatePresence>
         {visible.map((cell) => (
@@ -115,7 +115,7 @@ export function WorksheetRenderer({ board }: { board: BoardState }) {
         {has('top') && <RegionGrid region="top" board={board} reduced={reduced} />}
         {has('main') && <RegionGrid region="main" board={board} reduced={reduced} />}
         {(has('left') || has('right')) && (
-          <div className="flex items-start justify-center gap-8" data-region-row>
+          <div className="flex items-start justify-center gap-4" data-region-row>
             {has('left') && <RegionGrid region="left" board={board} reduced={reduced} />}
             {has('right') && <RegionGrid region="right" board={board} reduced={reduced} />}
           </div>

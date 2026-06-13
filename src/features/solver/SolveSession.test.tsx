@@ -11,6 +11,13 @@ function renderWithQuery(ui: React.ReactElement) {
   );
 }
 
+/** Click each digit in a number string on the on-screen keypad. */
+async function enterDigits(digits: string) {
+  for (const d of digits) {
+    await userEvent.click(screen.getByRole('button', { name: d }));
+  }
+}
+
 describe('SolveSession (18 × 24) multiplication', () => {
   it('walks to left-ask, submits wrong then 72, continues to sum-ask, submits 432, sees result and restart', async () => {
     renderWithQuery(<SolveSession problem={{ operation: 'mul', operands: [18, 24] }} />);
@@ -22,7 +29,7 @@ describe('SolveSession (18 × 24) multiplication', () => {
 
     // decompose step: quiz for 24 = 20 + ?
     expect(screen.getByText('24 = 20 + ?')).toBeInTheDocument();
-    await userEvent.type(screen.getByRole('spinbutton'), '4');
+    await enterDigits('4');
     await userEvent.click(screen.getByRole('button', { name: '확인' }));
     expect(screen.getByText(/정답이에요/)).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: '다음' }));
@@ -31,15 +38,14 @@ describe('SolveSession (18 × 24) multiplication', () => {
     expect(screen.getByText('18 × 4 = ?')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '다음' })).toBeDisabled();
 
-    // submit wrong answer first
-    await userEvent.type(screen.getByRole('spinbutton'), '70');
+    // submit wrong answer first (entry auto-clears after submit)
+    await enterDigits('70');
     await userEvent.click(screen.getByRole('button', { name: '확인' }));
     expect(screen.getByText(/힌트:/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '다음' })).toBeDisabled();
 
-    // submit correct answer 72
-    await userEvent.clear(screen.getByRole('spinbutton'));
-    await userEvent.type(screen.getByRole('spinbutton'), '72');
+    // submit correct answer 72 (no need to clear — entry was cleared automatically)
+    await enterDigits('72');
     await userEvent.click(screen.getByRole('button', { name: '확인' }));
     expect(screen.getByText(/정답이에요/)).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: '다음' }));
@@ -53,7 +59,7 @@ describe('SolveSession (18 × 24) multiplication', () => {
 
     // right-ask: 18 × 2 = ?
     expect(screen.getByText('18 × 2 = ?')).toBeInTheDocument();
-    await userEvent.type(screen.getByRole('spinbutton'), '36');
+    await enterDigits('36');
     await userEvent.click(screen.getByRole('button', { name: '확인' }));
     await userEvent.click(screen.getByRole('button', { name: '다음' }));
 
@@ -65,7 +71,7 @@ describe('SolveSession (18 × 24) multiplication', () => {
 
     // sum-ask: 72 + 360 = ? (appears in quiz prompt)
     expect(screen.getAllByText('72 + 360 = ?').length).toBeGreaterThanOrEqual(1);
-    await userEvent.type(screen.getByRole('spinbutton'), '432');
+    await enterDigits('432');
     await userEvent.click(screen.getByRole('button', { name: '확인' }));
     expect(screen.getByText(/정답이에요/)).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: '다음' }));
@@ -88,21 +94,21 @@ describe('SolveSession — verbosity: partial (18 + 24)', () => {
     await userEvent.click(screen.getByRole('button', { name: '다음' }));
 
     // Advance through all remaining steps, counting quizzes encountered
+    // (A quiz panel is present when the answer display div with aria-label="답" is shown)
     for (let i = 0; i < 20; i++) {
       const isDone = screen.queryByRole('button', { name: '다시 풀기' });
       if (isDone) break;
 
-      const spinbutton = screen.queryByRole('spinbutton');
-      if (spinbutton) {
+      const answerDisplay = screen.queryByLabelText('답');
+      if (answerDisplay) {
         quizCount++;
-        // Find the correct answer from the prompt and submit
-        const promptEl = screen.getByRole('spinbutton');
-        await userEvent.clear(promptEl);
-        await userEvent.type(promptEl, '12'); // won't always be right; just advance
+        // Submit any answer to advance (12 won't always be right; we just want to move forward)
+        await enterDigits('12');
         await userEvent.click(screen.getByRole('button', { name: '확인' }));
-        // If wrong, reveal answer and continue
-        if (screen.queryByRole('button', { name: '다음' }) && !screen.getByRole('button', { name: '다음' }).hasAttribute('disabled')) {
-          await userEvent.click(screen.getByRole('button', { name: '다음' }));
+        // If next button is now enabled, proceed
+        const nextBtn = screen.queryByRole('button', { name: '다음' });
+        if (nextBtn && !nextBtn.hasAttribute('disabled')) {
+          await userEvent.click(nextBtn);
         }
       } else {
         const nextBtn = screen.queryByRole('button', { name: '다음' });
@@ -131,8 +137,8 @@ describe('SolveSession — verbosity: answer (18 + 24)', () => {
     expect(screen.getByText('18 + 24 = ?')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '다음' })).toBeDisabled();
 
-    // Submit correct answer
-    await userEvent.type(screen.getByRole('spinbutton'), '42');
+    // Submit correct answer via keypad
+    await enterDigits('42');
     await userEvent.click(screen.getByRole('button', { name: '확인' }));
     expect(screen.getByText(/정답이에요/)).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: '다음' }));
@@ -156,13 +162,14 @@ describe('SolveSession (18 + 24)', () => {
     expect(screen.getByText('8 + 4 = ?')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '다음' })).toBeDisabled();
 
-    await userEvent.type(screen.getByRole('spinbutton'), '7');
+    // Submit wrong answer 7
+    await enterDigits('7');
     await userEvent.click(screen.getByRole('button', { name: '확인' }));
     expect(screen.getByText(/힌트:/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '다음' })).toBeDisabled();
 
-    await userEvent.clear(screen.getByRole('spinbutton'));
-    await userEvent.type(screen.getByRole('spinbutton'), '12');
+    // Submit correct answer 12 (entry auto-cleared after previous submit)
+    await enterDigits('12');
     await userEvent.click(screen.getByRole('button', { name: '확인' }));
     expect(screen.getByText(/정답이에요/)).toBeInTheDocument();
 
@@ -198,8 +205,8 @@ describe('SolveSession — records attempt on completion', () => {
     // Step 1 (setup): advance
     await userEvent.click(screen.getByRole('button', { name: '다음' }));
 
-    // Step 2 (final-ask): submit correct answer 42
-    await userEvent.type(screen.getByRole('spinbutton'), '42');
+    // Step 2 (final-ask): submit correct answer 42 via keypad
+    await enterDigits('42');
     await userEvent.click(screen.getByRole('button', { name: '확인' }));
     await userEvent.click(screen.getByRole('button', { name: '다음' }));
 
@@ -238,7 +245,7 @@ describe('SolveSession — records attempt on completion', () => {
 
     // First run: setup → answer → done
     await userEvent.click(screen.getByRole('button', { name: '다음' }));
-    await userEvent.type(screen.getByRole('spinbutton'), '42');
+    await enterDigits('42');
     await userEvent.click(screen.getByRole('button', { name: '확인' }));
     await userEvent.click(screen.getByRole('button', { name: '다음' }));
 
@@ -247,7 +254,7 @@ describe('SolveSession — records attempt on completion', () => {
     // Reset → second run
     await userEvent.click(screen.getByRole('button', { name: '다시 풀기' }));
     await userEvent.click(screen.getByRole('button', { name: '다음' }));
-    await userEvent.type(screen.getByRole('spinbutton'), '42');
+    await enterDigits('42');
     await userEvent.click(screen.getByRole('button', { name: '확인' }));
     await userEvent.click(screen.getByRole('button', { name: '다음' }));
 
