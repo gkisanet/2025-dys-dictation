@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import type { Problem, Verbosity } from './steps/types';
 import { buildAddition } from './steps/buildAddition';
 import { buildSubtraction } from './steps/buildSubtraction';
@@ -9,13 +9,16 @@ import { WorksheetRenderer } from './WorksheetRenderer';
 import { NarrationPanel } from './ui/NarrationPanel';
 import { QuizPanel } from './ui/QuizPanel';
 import { Controls } from './ui/Controls';
+import { useRecordAttempt } from '@/features/progress/queries';
 
 export function SolveSession({
   problem,
   verbosity = 'full',
+  stageId,
 }: {
   problem: Problem;
   verbosity?: Verbosity;
+  stageId?: string;
 }) {
   const steps = useMemo(() => {
     const full = (() => {
@@ -29,6 +32,39 @@ export function SolveSession({
   }, [problem, verbosity]);
   const engine = useSolveEngine(steps);
   const { current } = engine;
+
+  const recordAttempt = useRecordAttempt();
+  // Guard: record exactly once per run (fires again after reset because
+  // resetCountRef increments and the effect re-arms)
+  const recordedRef = useRef(false);
+  const resetCountRef = useRef(0);
+
+  // Track resets: when engine.score resets to {correct:0,total:0} and we were done
+  const prevIsDoneRef = useRef(false);
+  useEffect(() => {
+    if (prevIsDoneRef.current && !engine.isDone) {
+      // A reset happened
+      resetCountRef.current += 1;
+      recordedRef.current = false;
+    }
+    prevIsDoneRef.current = engine.isDone;
+  });
+
+  useEffect(() => {
+    if (engine.isDone && !recordedRef.current && stageId) {
+      recordedRef.current = true;
+      recordAttempt.mutate({
+        stageId,
+        operation: problem.operation,
+        operandA: problem.operands[0],
+        operandB: problem.operands[1],
+        quizCorrect: engine.score.correct,
+        quizTotal: engine.score.total,
+        createdAt: Date.now(),
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [engine.isDone, stageId, resetCountRef.current]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -50,6 +86,15 @@ export function SolveSession({
           revealedAnswer={engine.revealedAnswer}
           onSubmit={engine.submit}
         />
+      )}
+
+      {engine.isDone && (
+        <div className="rounded-lg bg-green-50 p-4 text-center text-sm dark:bg-green-950">
+          <p className="font-semibold text-green-700 dark:text-green-300">오늘도 잘했어요!</p>
+          <p className="text-green-600 dark:text-green-400">
+            점수 {engine.score.correct}/{engine.score.total}
+          </p>
+        </div>
       )}
 
       <Controls

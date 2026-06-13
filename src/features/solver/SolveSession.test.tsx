@@ -1,11 +1,19 @@
-import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SolveSession } from './SolveSession';
+
+function renderWithQuery(ui: React.ReactElement) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(
+    <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>,
+  );
+}
 
 describe('SolveSession (18 × 24) multiplication', () => {
   it('walks to left-ask, submits wrong then 72, continues to sum-ask, submits 432, sees result and restart', async () => {
-    render(<SolveSession problem={{ operation: 'mul', operands: [18, 24] }} />);
+    renderWithQuery(<SolveSession problem={{ operation: 'mul', operands: [18, 24] }} />);
 
     // setup step: narration shown, no quiz, can advance
     expect(screen.getByText(/세로로/)).toBeInTheDocument();
@@ -70,7 +78,7 @@ describe('SolveSession (18 × 24) multiplication', () => {
 
 describe('SolveSession — verbosity: partial (18 + 24)', () => {
   it('shows exactly one quiz across the full run', async () => {
-    render(<SolveSession problem={{ operation: 'add', operands: [18, 24] }} verbosity="partial" />);
+    renderWithQuery(<SolveSession problem={{ operation: 'add', operands: [18, 24] }} verbosity="partial" />);
 
     // Count quiz appearances by advancing through all steps
     let quizCount = 0;
@@ -112,7 +120,7 @@ describe('SolveSession — verbosity: partial (18 + 24)', () => {
 
 describe('SolveSession — verbosity: answer (18 + 24)', () => {
   it('shows setup, then a single "18 + 24 = ?" quiz, then result', async () => {
-    render(<SolveSession problem={{ operation: 'add', operands: [18, 24] }} verbosity="answer" />);
+    renderWithQuery(<SolveSession problem={{ operation: 'add', operands: [18, 24] }} verbosity="answer" />);
 
     // Step 1 (setup): narration visible, no quiz
     expect(screen.getByText(/세로로 써요/)).toBeInTheDocument();
@@ -137,7 +145,7 @@ describe('SolveSession — verbosity: answer (18 + 24)', () => {
 
 describe('SolveSession (18 + 24)', () => {
   it('walks setup -> ones quiz (blocks) -> correct -> reveals result', async () => {
-    render(<SolveSession problem={{ operation: 'add', operands: [18, 24] }} />);
+    renderWithQuery(<SolveSession problem={{ operation: 'add', operands: [18, 24] }} />);
 
     // Setup step: narration shown, no quiz, can advance.
     expect(screen.getByText(/세로로 써요/)).toBeInTheDocument();
@@ -161,5 +169,99 @@ describe('SolveSession (18 + 24)', () => {
     await userEvent.click(screen.getByRole('button', { name: '다음' }));
     // Write step reveals the result digit 2 (data-role result).
     expect(screen.getByText('2', { selector: '[data-role="result"]' })).toBeInTheDocument();
+  });
+});
+
+describe('SolveSession — records attempt on completion', () => {
+  it('records exactly one attempt when a run completes, with correct score', async () => {
+    const { createMemoryStore } = await import('@/features/progress/memoryStore');
+    const { _resetProgressStore } = await import('@/features/progress/store');
+    const storeModule = await import('@/features/progress/store');
+
+    // Swap the singleton to a fresh memory store for this test
+    _resetProgressStore();
+    const testStore = createMemoryStore();
+    // Spy on recordAttempt so we can verify it was called
+    const recordSpy = vi.spyOn(testStore, 'recordAttempt');
+
+    // Override getProgressStore to return our testStore
+    vi.spyOn(storeModule, 'getProgressStore').mockReturnValue(testStore);
+
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    renderWithQuery(
+      <QueryClientProvider client={queryClient}>
+        <SolveSession
+          problem={{ operation: 'add', operands: [18, 24] }}
+          verbosity="answer"
+          stageId="add-5"
+        />
+      </QueryClientProvider>,
+    );
+
+    // Step 1 (setup): advance
+    await userEvent.click(screen.getByRole('button', { name: '다음' }));
+
+    // Step 2 (final-ask): submit correct answer 42
+    await userEvent.type(screen.getByRole('spinbutton'), '42');
+    await userEvent.click(screen.getByRole('button', { name: '확인' }));
+    await userEvent.click(screen.getByRole('button', { name: '다음' }));
+
+    // Run is done
+    expect(screen.getByRole('button', { name: '다시 풀기' })).toBeInTheDocument();
+
+    // Wait for mutation to fire
+    await waitFor(() => expect(recordSpy).toHaveBeenCalledTimes(1));
+
+    const [attempt] = recordSpy.mock.calls[0];
+    expect(attempt.stageId).toBe('add-5');
+    expect(attempt.operation).toBe('add');
+    expect(attempt.quizTotal).toBeGreaterThan(0);
+
+    vi.restoreAllMocks();
+    _resetProgressStore();
+  });
+
+  it('records a fresh attempt after reset, not double-recording the first run', async () => {
+    const { createMemoryStore } = await import('@/features/progress/memoryStore');
+    const { _resetProgressStore } = await import('@/features/progress/store');
+    const storeModule = await import('@/features/progress/store');
+
+    _resetProgressStore();
+    const testStore = createMemoryStore();
+    const recordSpy = vi.spyOn(testStore, 'recordAttempt');
+    vi.spyOn(storeModule, 'getProgressStore').mockReturnValue(testStore);
+
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    renderWithQuery(
+      <QueryClientProvider client={queryClient}>
+        <SolveSession
+          problem={{ operation: 'add', operands: [18, 24] }}
+          verbosity="answer"
+          stageId="add-5"
+        />
+      </QueryClientProvider>,
+    );
+
+    // First run: setup → answer → done
+    await userEvent.click(screen.getByRole('button', { name: '다음' }));
+    await userEvent.type(screen.getByRole('spinbutton'), '42');
+    await userEvent.click(screen.getByRole('button', { name: '확인' }));
+    await userEvent.click(screen.getByRole('button', { name: '다음' }));
+
+    await waitFor(() => expect(recordSpy).toHaveBeenCalledTimes(1));
+
+    // Reset → second run
+    await userEvent.click(screen.getByRole('button', { name: '다시 풀기' }));
+    await userEvent.click(screen.getByRole('button', { name: '다음' }));
+    await userEvent.type(screen.getByRole('spinbutton'), '42');
+    await userEvent.click(screen.getByRole('button', { name: '확인' }));
+    await userEvent.click(screen.getByRole('button', { name: '다음' }));
+
+    await waitFor(() => expect(recordSpy).toHaveBeenCalledTimes(2));
+
+    vi.restoreAllMocks();
+    _resetProgressStore();
   });
 });

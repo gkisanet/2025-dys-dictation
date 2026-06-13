@@ -5,6 +5,7 @@ import {
   createRouter,
   createMemoryHistory,
 } from '@tanstack/react-router';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { router } from './router';
 
 function renderAt(path: string) {
@@ -12,8 +13,13 @@ function renderAt(path: string) {
     routeTree: router.routeTree,
     history: createMemoryHistory({ initialEntries: [path] }),
   });
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   // `as never` works around TanStack Router's registered-router narrowing in tests; runtime behavior is identical.
-  render(<RouterProvider router={testRouter as never} />);
+  render(
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={testRouter as never} />
+    </QueryClientProvider>,
+  );
 }
 
 describe('router', () => {

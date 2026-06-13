@@ -34,7 +34,7 @@ export function Solve() {
         ← 단계 목록
       </Link>
       <h1 className="mb-6 text-xl font-bold">{stage.title}</h1>
-      <SolveSession problem={problem} verbosity={stage.verbosity} />
+      <SolveSession problem={problem} verbosity={stage.verbosity} stageId={stage.id} />
     </main>
   );
 }
