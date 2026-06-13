@@ -417,10 +417,19 @@ export function buildMultiplication(problem: Problem): Step[] {
     quiz: { prompt: `${b} = ${tensB * 10} + ?`, answer: onesB, hints: [`${b}의 일의 자리를 생각해보세요.`, `${b} - ${tensB * 10} = ?`] },
   });
 
-  // 3. Reveal left a and × onesB operand cells (before digit-by-digit steps)
+  // 3. branches: reveal BOTH branch operand frames together
   aD.forEach((_, pl) => shown.add(`left-a-${pl}`));
   shown.add('left-op');
   shown.add('left-b');
+  aD.forEach((_, pl) => shown.add(`right-a-${pl}`));
+  shown.add('right-op');
+  shown.add('right-b');
+  shown.add('right-b-zero');
+  steps.push({
+    id: 'branches', kind: 'decompose',
+    narration: `왼쪽은 ${a} × ${onesB}, 오른쪽은 ${a} × ${tensB * 10}. 두 곱을 각각 구해서 더할 거예요.`,
+    board: boardFrom(shown),
+  });
 
   // 4–7. LEFT digit-by-digit steps: left-ones-ask, left-ones-write, left-tens-ask, left-tens-write
   // We build these manually (like appendDigitByDigitSteps) but inline for left, using prefix='left', idPrefix='left-'
@@ -474,11 +483,7 @@ export function buildMultiplication(problem: Problem): Step[] {
     });
   }
 
-  // right-zero: reveal right operand cells and the zero-placeholder
-  aD.forEach((_, pl) => shown.add(`right-a-${pl}`));
-  shown.add('right-op');
-  shown.add('right-b');
-  shown.add('right-b-zero');
+  // right-zero: right operands already revealed by 'branches'; only reveal the zero-placeholder result cell
   shown.add('right-r-0');
   steps.push({
     id: 'right-zero', kind: 'place-zero',

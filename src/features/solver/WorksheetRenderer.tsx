@@ -136,6 +136,10 @@ export function WorksheetRenderer({ board }: { board: BoardState }) {
         {(has('left') || has('right')) && (
           <div className={`flex items-start justify-center gap-3 ${branchDimClass}`} data-region-row>
             {has('left') && <RegionGrid region="left" board={board} reduced={reduced} />}
+            {board.cells.some(c => c.region === 'left' && c.visible) &&
+             board.cells.some(c => c.region === 'right' && c.visible) && (
+              <div className="self-center px-1 text-2xl font-bold text-muted-foreground" aria-hidden="true">+</div>
+            )}
             {has('right') && <RegionGrid region="right" board={board} reduced={reduced} />}
           </div>
         )}

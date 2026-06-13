@@ -135,6 +135,7 @@ describe('buildMultiplication(92 × 16) — 2x2 digit-by-digit', () => {
     expect(steps.map(s => s.id)).toEqual([
       'setup',
       'decompose',
+      'branches',
       'left-ones-ask', 'left-ones-write',
       'left-tens-ask', 'left-tens-write',
       'right-zero',
@@ -150,6 +151,23 @@ describe('buildMultiplication(92 × 16) — 2x2 digit-by-digit', () => {
     const s = steps.find(s => s.id === 'decompose')!;
     expect(s.quiz?.prompt).toBe('16 = 10 + ?');
     expect(s.quiz?.answer).toBe(6);
+  });
+
+  it('branches: both left-a-0 and right-a-0 are visible simultaneously', () => {
+    const s = steps.find(s => s.id === 'branches')!;
+    const { cells } = s.board;
+    expect(cells.find(c => c.id === 'left-a-0')?.visible).toBe(true);
+    expect(cells.find(c => c.id === 'right-a-0')?.visible).toBe(true);
+    expect(cells.find(c => c.id === 'left-op')?.visible).toBe(true);
+    expect(cells.find(c => c.id === 'left-b')?.visible).toBe(true);
+    expect(cells.find(c => c.id === 'right-op')?.visible).toBe(true);
+    expect(cells.find(c => c.id === 'right-b')?.visible).toBe(true);
+    expect(cells.find(c => c.id === 'right-b-zero')?.visible).toBe(true);
+  });
+
+  it('branches: right-r-0 (zero-placeholder) is NOT yet visible', () => {
+    const s = steps.find(s => s.id === 'branches')!;
+    expect(s.board.cells.find(c => c.id === 'right-r-0')?.visible).toBe(false);
   });
 
   it('left-ones-ask: "2 × 6 = ?" → 12', () => {
@@ -275,6 +293,7 @@ describe('buildMultiplication(78 × 24) — 2x2 with carries', () => {
     expect(steps.map(s => s.id)).toEqual([
       'setup',
       'decompose',
+      'branches',
       'left-ones-ask', 'left-ones-write',
       'left-tens-ask', 'left-tens-write',
       'right-zero',

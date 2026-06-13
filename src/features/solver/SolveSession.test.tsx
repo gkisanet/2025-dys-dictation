@@ -34,6 +34,10 @@ describe('SolveSession (18 × 24) multiplication', () => {
     expect(screen.getByText(/정답이에요/)).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: '다음' }));
 
+    // branches step: both branch setups visible, no quiz, advance
+    expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: '다음' }));
+
     // left-ones-ask: 8 × 4 = ? → answer 32
     expect(screen.getByText('8 × 4 = ?')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '다음' })).toBeDisabled();
