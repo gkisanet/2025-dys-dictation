@@ -36,6 +36,35 @@ describe('buildSubtraction(52 - 28) — with borrow in ones', () => {
   });
 });
 
+describe('buildSubtraction(20 - 19) — leading zero trimmed', () => {
+  const steps = buildSubtraction({ operation: 'sub', operands: [20, 19] });
+
+  it('result step shows only "1" (no r-1 cell visible)', () => {
+    const result = steps.find(s => s.id === 'result')!;
+    const r1 = result.board.cells.find(c => c.id === 'r-1');
+    // Either r-1 does not exist or it is not visible
+    expect(!r1 || !r1.visible).toBe(true);
+  });
+
+  it('r-0 is visible with value "1"', () => {
+    const result = steps.find(s => s.id === 'result')!;
+    const r0 = result.board.cells.find(c => c.id === 'r-0' && c.visible);
+    expect(r0).toBeDefined();
+    expect(r0!.value).toBe('1');
+  });
+});
+
+describe('buildSubtraction(52 - 28) — result digits both shown (no trim of 2)', () => {
+  it('result step shows both "4" at place 0 and "2" at place 1', () => {
+    const steps = buildSubtraction({ operation: 'sub', operands: [52, 28] });
+    const result = steps.find(s => s.id === 'result')!;
+    const visibleResults = result.board.cells.filter(c => c.role === 'result' && c.visible);
+    const values = visibleResults.map(c => c.value).sort();
+    expect(values).toContain('4');
+    expect(values).toContain('2');
+  });
+});
+
 describe('buildSubtraction(48 - 13) — no borrow', () => {
   const steps = buildSubtraction({ operation: 'sub', operands: [48, 13] });
 

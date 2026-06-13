@@ -15,11 +15,13 @@ export function buildMultiplication(problem: Problem): Step[] {
   const P2 = p2.product;                // e.g. 36 (×10 = 360 in merge)
   const final = a * b;
 
+  // Digit sources for branch result and merge addend cells — MUST match exactly
+  const p1Digits = onesFirst(P1);         // e.g. [2,7] — shared source for left result + merge addend-1
+  const p2ShiftedDigits = onesFirst(P2 * 10); // e.g. [0,6,3] — shared source for right result + merge addend-2
+
   // Final addition: P1 + P2*10
-  const mergeA = P1;
-  const mergeB = P2 * 10;
-  const mergeAD = onesFirst(mergeA);    // e.g. [2,7]
-  const mergeBD = onesFirst(mergeB);    // e.g. [0,6,3]
+  const mergeAD = p1Digits;              // same as onesFirst(P1)
+  const mergeBD = p2ShiftedDigits;       // same as onesFirst(P2*10)
   // Compute carry for the merge addition
   const mergeCols = Math.max(mergeAD.length, mergeBD.length);
   const mergeCarryIn: number[] = [];
@@ -64,8 +66,8 @@ export function buildMultiplication(problem: Problem): Step[] {
       cells.push({ id: `left-c-${i}`, region: 'left', row: 0, place: i, value: String(p1.carryInto[i]), role: 'carry', superscript: true, visible: false });
     }
   }
-  // P1 result digits with layoutIds for gather
-  p1.resultDigit.forEach((d, p) =>
+  // P1 result digits with layoutIds for gather — use p1Digits so layoutIds match merge addend-1
+  p1Digits.forEach((d, p) =>
     cells.push({ id: `left-r-${p}`, region: 'left', row: 3, place: p, value: String(d), role: 'result', visible: false, layoutId: `p1-${p}` })
   );
 
@@ -81,9 +83,10 @@ export function buildMultiplication(problem: Problem): Step[] {
       cells.push({ id: `right-c-${i}`, region: 'right', row: 0, place: i + 1, value: String(p2.carryInto[i]), role: 'carry', superscript: true, visible: false });
     }
   }
-  // P2 result digits: ones place is the zero-placeholder, rest start at place 1
+  // P2 result digits: ones place is always 0 (zero-placeholder), higher digits from p2ShiftedDigits
+  // Use p2ShiftedDigits so layoutIds exactly match merge addend-2
   cells.push({ id: `right-r-0`, region: 'right', row: 3, place: 0, value: '0', role: 'zero-placeholder', visible: false, layoutId: 'p2-0' });
-  p2.resultDigit.forEach((d, i) =>
+  p2ShiftedDigits.slice(1).forEach((d, i) =>
     cells.push({ id: `right-r-${i + 1}`, region: 'right', row: 3, place: i + 1, value: String(d), role: 'result', visible: false, layoutId: `p2-${i + 1}` })
   );
 
@@ -154,7 +157,7 @@ export function buildMultiplication(problem: Problem): Step[] {
   });
 
   // 4. left-write: reveal left divider + P1 digits + carries
-  p1.resultDigit.forEach((_, p) => shown.add(`left-r-${p}`));
+  p1Digits.forEach((_, p) => shown.add(`left-r-${p}`));
   for (let i = 0; i < aD.length; i++) {
     if (p1.carryInto[i] > 0) shown.add(`left-c-${i}`);
   }
@@ -190,8 +193,8 @@ export function buildMultiplication(problem: Problem): Step[] {
     quiz: { prompt: `${a} × ${tensB} = ?`, answer: P2, hints: [`${a}에 ${tensB}를 곱해요.`, `${a} × ${tensB} 를 계산해보세요.`] },
   });
 
-  // 7. right-write: reveal remaining P2 digits + carries
-  p2.resultDigit.forEach((_, i) => shown.add(`right-r-${i + 1}`));
+  // 7. right-write: reveal remaining P2 digits + carries (skip index 0 which is the zero-placeholder)
+  p2ShiftedDigits.slice(1).forEach((_, i) => shown.add(`right-r-${i + 1}`));
   for (let i = 0; i < aD.length; i++) {
     if (p2.carryInto[i] > 0) shown.add(`right-c-${i}`);
   }
@@ -204,11 +207,11 @@ export function buildMultiplication(problem: Problem): Step[] {
   // 8. gather: make left/right result cells invisible, reveal merge addends
   // Build the shown set without left/right result cells
   const shownGather = new Set(shown);
-  // Remove left result cells
-  p1.resultDigit.forEach((_, p) => shownGather.delete(`left-r-${p}`));
+  // Remove left result cells (same set as was added in left-write)
+  p1Digits.forEach((_, p) => shownGather.delete(`left-r-${p}`));
   // Remove right result cells (including zero-placeholder)
   shownGather.delete(`right-r-0`);
-  p2.resultDigit.forEach((_, i) => shownGather.delete(`right-r-${i + 1}`));
+  p2ShiftedDigits.slice(1).forEach((_, i) => shownGather.delete(`right-r-${i + 1}`));
   // Add merge addend cells
   mergeAD.forEach((_, p) => shownGather.add(`merge-a-${p}`));
   mergeBD.forEach((_, p) => shownGather.add(`merge-b-${p}`));

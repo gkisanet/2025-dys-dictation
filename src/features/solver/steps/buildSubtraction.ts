@@ -33,7 +33,11 @@ export function buildSubtraction(problem: Problem): Step[] {
   for (let j = 1; j < cols; j++) {
     if (borrowFlag[j - 1]) cells.push({ id: `bk-${j}`, region: 'main', row: 0, place: j, value: String(reduced[j]), role: 'borrow', superscript: true, visible: false });
   }
-  for (let i = 0; i < cols; i++) cells.push({ id: `r-${i}`, region: 'main', row: 3, place: i, value: String(diff[i]), role: 'result', visible: false });
+  for (let i = 0; i < cols; i++) {
+    // Trim a leading zero: skip the highest-place result digit when it is 0
+    if (i === cols - 1 && diff[i] === 0) continue;
+    cells.push({ id: `r-${i}`, region: 'main', row: 3, place: i, value: String(diff[i]), role: 'result', visible: false });
+  }
   const dividers = [{ region: 'main' as const, row: 2 }];
 
   const boardFrom = (shown: Set<string>, hi: Record<string, NonNullable<Highlight>> = {}): BoardState => ({

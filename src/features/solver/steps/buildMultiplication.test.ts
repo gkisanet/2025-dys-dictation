@@ -89,6 +89,17 @@ describe('buildMultiplication(18 × 24)', () => {
   });
 });
 
+describe('buildMultiplication — branch/merge layoutId invariant', () => {
+  it.each([[18, 24], [13, 12], [25, 40]] as const)('branch and merge layoutIds match for %i x %i', (a, b) => {
+    const steps = buildMultiplication({ operation: 'mul', operands: [a, b] });
+    const last = steps[steps.length - 1];
+    const ids = (pred: (r: string) => boolean) => new Set(last.board.cells.filter(c => c.layoutId && pred(c.region)).map(c => c.layoutId));
+    const branch = ids(r => r === 'left' || r === 'right');
+    const merge = ids(r => r === 'merge');
+    expect([...branch].sort()).toEqual([...merge].sort());
+  });
+});
+
 describe('buildMultiplication(13 × 12) — lighter correctness check', () => {
   const steps = buildMultiplication({ operation: 'mul', operands: [13, 12] });
 
