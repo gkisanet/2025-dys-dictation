@@ -1,4 +1,4 @@
-import type { Operation, Problem } from '@/features/solver/steps/types';
+import type { Problem } from '@/features/solver/steps/types';
 
 export type Pattern =
   | 'add-nocarry'

@@ -14,7 +14,7 @@ export function Home() {
       <h1 className="mb-6 text-2xl font-bold">암산 학습</h1>
       <div className="grid grid-cols-3 gap-3">
         {OPS.map(({ op, label, icon: Icon }) => (
-          <Link key={op} to="/solve/$operation" params={{ operation: op }}>
+          <Link key={op} to="/learn/$operation" params={{ operation: op }}>
             <Button variant="outline" className="h-24 w-full flex-col">
               <Icon className="size-7" />
               <span>{label}</span>

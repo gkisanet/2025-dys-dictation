@@ -68,6 +68,73 @@ describe('SolveSession (18 × 24) multiplication', () => {
   });
 });
 
+describe('SolveSession — verbosity: partial (18 + 24)', () => {
+  it('shows exactly one quiz across the full run', async () => {
+    render(<SolveSession problem={{ operation: 'add', operands: [18, 24] }} verbosity="partial" />);
+
+    // Count quiz appearances by advancing through all steps
+    let quizCount = 0;
+
+    // Step 1 (setup): no quiz
+    expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: '다음' }));
+
+    // Advance through all remaining steps, counting quizzes encountered
+    for (let i = 0; i < 20; i++) {
+      const isDone = screen.queryByRole('button', { name: '다시 풀기' });
+      if (isDone) break;
+
+      const spinbutton = screen.queryByRole('spinbutton');
+      if (spinbutton) {
+        quizCount++;
+        // Find the correct answer from the prompt and submit
+        const promptEl = screen.getByRole('spinbutton');
+        await userEvent.clear(promptEl);
+        await userEvent.type(promptEl, '12'); // won't always be right; just advance
+        await userEvent.click(screen.getByRole('button', { name: '확인' }));
+        // If wrong, reveal answer and continue
+        if (screen.queryByRole('button', { name: '다음' }) && !screen.getByRole('button', { name: '다음' }).hasAttribute('disabled')) {
+          await userEvent.click(screen.getByRole('button', { name: '다음' }));
+        }
+      } else {
+        const nextBtn = screen.queryByRole('button', { name: '다음' });
+        if (nextBtn && !nextBtn.hasAttribute('disabled')) {
+          await userEvent.click(nextBtn);
+        } else {
+          break;
+        }
+      }
+    }
+
+    expect(quizCount).toBe(1);
+  });
+});
+
+describe('SolveSession — verbosity: answer (18 + 24)', () => {
+  it('shows setup, then a single "18 + 24 = ?" quiz, then result', async () => {
+    render(<SolveSession problem={{ operation: 'add', operands: [18, 24] }} verbosity="answer" />);
+
+    // Step 1 (setup): narration visible, no quiz
+    expect(screen.getByText(/세로로 써요/)).toBeInTheDocument();
+    expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: '다음' }));
+
+    // Step 2 (final-ask): the combined quiz "18 + 24 = ?"
+    expect(screen.getByText('18 + 24 = ?')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '다음' })).toBeDisabled();
+
+    // Submit correct answer
+    await userEvent.type(screen.getByRole('spinbutton'), '42');
+    await userEvent.click(screen.getByRole('button', { name: '확인' }));
+    expect(screen.getByText(/정답이에요/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: '다음' }));
+
+    // Step 3 (result): shows 42 and restart button
+    expect(screen.getByText(/42/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '다시 풀기' })).toBeInTheDocument();
+  });
+});
+
 describe('SolveSession (18 + 24)', () => {
   it('walks setup -> ones quiz (blocks) -> correct -> reveals result', async () => {
     render(<SolveSession problem={{ operation: 'add', operands: [18, 24] }} />);

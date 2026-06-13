@@ -22,8 +22,8 @@ describe('router', () => {
     expect(await screen.findByRole('heading', { name: '암산 학습' })).toBeInTheDocument();
   });
 
-  it('renders Solve with the operation param', async () => {
-    renderAt('/solve/add');
-    expect(await screen.findByRole('heading', { name: '덧셈' })).toBeInTheDocument();
+  it('renders Solve stage with the operation and stageId params', async () => {
+    renderAt('/solve/add/add-1');
+    expect(await screen.findByRole('heading', { name: '받아올림 없는 덧셈' })).toBeInTheDocument();
   });
 });

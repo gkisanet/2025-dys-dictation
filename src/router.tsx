@@ -5,6 +5,7 @@ import {
   Outlet,
 } from '@tanstack/react-router';
 import { Home } from './routes/Home';
+import { LearnStages } from './routes/LearnStages';
 import { Solve } from './routes/Solve';
 
 const rootRoute = createRootRoute({ component: () => <Outlet /> });
@@ -15,13 +16,19 @@ const indexRoute = createRoute({
   component: Home,
 });
 
-const solveRoute = createRoute({
+const learnRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/solve/$operation',
+  path: '/learn/$operation',
+  component: LearnStages,
+});
+
+const solveStageRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/solve/$operation/$stageId',
   component: Solve,
 });
 
-const routeTree = rootRoute.addChildren([indexRoute, solveRoute]);
+const routeTree = rootRoute.addChildren([indexRoute, learnRoute, solveStageRoute]);
 
 export const router = createRouter({ routeTree });
 
