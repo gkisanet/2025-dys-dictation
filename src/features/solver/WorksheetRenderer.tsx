@@ -24,23 +24,6 @@ function cellClass(cell: Cell): string {
   return `${base} ${hl} ${role}`.trim();
 }
 
-/**
- * Assigns 1-indexed CSS grid rows by interleaving content rows and dividers:
- * each content row gets a track; a divider declared for row N gets the track
- * immediately after row N's content. This keeps dividers between operands and
- * results instead of colliding with them.
- */
-function buildRowMap(rows: number[], dividerRows: number[]) {
-  const contentRow = new Map<number, number>();
-  const dividerRow = new Map<number, number>();
-  let grid = 1;
-  for (const r of rows) {
-    contentRow.set(r, grid++);
-    if (dividerRows.includes(r)) dividerRow.set(r, grid++);
-  }
-  return { contentRow, dividerRow };
-}
-
 function RegionGrid({
   board,
   region,
@@ -58,13 +41,27 @@ function RegionGrid({
   const maxPlace = Math.max(...all.map((c) => c.place));
   const rows = [...new Set(all.map((c) => c.row))].sort((a, b) => a - b);
   const dividerRows = board.dividers.filter((d) => d.region === region).map((d) => d.row);
-  const { contentRow, dividerRow } = buildRowMap(rows, dividerRows);
+  // Build row maps with explicit gridTemplateRows so carry rows always reserve
+  // their height even when empty (avoids left/right branch misalignment).
+  const isCarryRow = (r: number) => all.some((c) => c.row === r && c.superscript);
+  const contentRow = new Map<number, number>();
+  const dividerRow = new Map<number, number>();
+  const templateRows: string[] = [];
+  let grid = 1;
+  for (const r of rows) {
+    contentRow.set(r, grid++);
+    templateRows.push(isCarryRow(r) ? '1.25rem' : '2.5rem');
+    if (dividerRows.includes(r)) { dividerRow.set(r, grid++); templateRows.push('0.5rem'); }
+  }
 
   return (
     <div
       data-region={region}
       className="grid gap-x-1 gap-y-0 font-mono"
-      style={{ gridTemplateColumns: `repeat(${maxPlace + 1}, 2.25rem)` }}
+      style={{
+        gridTemplateColumns: `repeat(${maxPlace + 1}, 2.25rem)`,
+        gridTemplateRows: templateRows.join(' '),
+      }}
     >
       <AnimatePresence>
         {visible.map((cell) => {

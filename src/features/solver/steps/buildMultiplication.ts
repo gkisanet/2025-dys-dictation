@@ -340,18 +340,18 @@ export function buildMultiplication(problem: Problem): Step[] {
   );
 
   // RIGHT region: a × tensB (shift=1, place-zero at place 0)
-  // Row 1: a (shifted right by 1)
+  // Row 1: a (NOT shifted — operand aligns with its digits, only result is shifted)
   aD.forEach((d, pl) =>
-    cells.push({ id: `right-a-${pl}`, region: 'right', row: 1, place: pl + 1, value: String(d), role: 'operand', visible: false })
+    cells.push({ id: `right-a-${pl}`, region: 'right', row: 1, place: pl, value: String(d), role: 'operand', visible: false })
   );
-  // Row 2: × tensB (showing full ×N0 with the trailing zero)
-  cells.push({ id: 'right-op', region: 'right', row: 2, place: aD.length + 2, value: '×', role: 'operator', visible: false });
-  cells.push({ id: 'right-b', region: 'right', row: 2, place: 2, value: String(tensB), role: 'operand', visible: false });
-  cells.push({ id: 'right-b-zero', region: 'right', row: 2, place: 1, value: '0', role: 'operand', visible: false });
-  // Row 0: carries for right (skip i=0); placed at i+1 (shifted)
+  // Row 2: × tensB (showing full ×N0 with the trailing zero; NOT shifted)
+  cells.push({ id: 'right-op', region: 'right', row: 2, place: aD.length, value: '×', role: 'operator', visible: false });
+  cells.push({ id: 'right-b', region: 'right', row: 2, place: 1, value: String(tensB), role: 'operand', visible: false });
+  cells.push({ id: 'right-b-zero', region: 'right', row: 2, place: 0, value: '0', role: 'operand', visible: false });
+  // Row 0: carries for right (skip i=0); placed at i (not shifted, matching operand column)
   for (let i = 1; i < aD.length; i++) {
     if (p2.carryInto[i] > 0) {
-      cells.push({ id: `right-c-${i}`, region: 'right', row: 0, place: i + 1, value: String(p2.carryInto[i]), role: 'carry', superscript: true, visible: false });
+      cells.push({ id: `right-c-${i}`, region: 'right', row: 0, place: i, value: String(p2.carryInto[i]), role: 'carry', superscript: true, visible: false });
     }
   }
   // Carry anchor: if no real carry cells exist for right row 0, add invisible anchor so row 0 is always reserved

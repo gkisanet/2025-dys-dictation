@@ -98,7 +98,7 @@ export function SolveSession({
       <NarrationPanel text={current.narration} />
 
       {/* Bottom dock: stable min-height, always renders exactly one panel */}
-      <div className="min-h-[15rem]">
+      <div className="min-h-[12rem]">
         {engine.isDone ? (
           /* Completion card with 다시 풀기 inside */
           <Card className="overflow-hidden">
