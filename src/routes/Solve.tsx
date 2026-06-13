@@ -8,6 +8,13 @@ import type { Operation } from '@/features/solver/steps/types';
 
 export function Solve() {
   const { operation, stageId } = useParams({ from: '/solve/$operation/$stageId' });
+  // Key by stageId so navigating to a new stage (same route) REMOUNTS the
+  // player — otherwise `problem`/engine state would persist and the screen
+  // would not change when pressing "다음 단계".
+  return <StagePlayer key={stageId} operation={operation} stageId={stageId} />;
+}
+
+function StagePlayer({ operation, stageId }: { operation: string; stageId: string }) {
   const stage = getStage(stageId);
 
   const [problem] = useState(() => {
