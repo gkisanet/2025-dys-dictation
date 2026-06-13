@@ -1,6 +1,6 @@
-import type { BoardState, Cell, Region } from './steps/types';
+import type { BoardState, Cell, Highlight, Region } from './steps/types';
 
-const HL_CLASS: Record<string, string> = {
+const HL_CLASS: Record<NonNullable<Highlight>, string> = {
   now: 'bg-amber-200 text-amber-800 rounded-md',
   pair: 'bg-blue-100 text-blue-700 rounded-md',
   zero: 'bg-orange-200 text-orange-800 rounded-md',
@@ -47,7 +47,9 @@ function RegionGrid({ board, region }: { board: BoardState; region: Region }) {
           <div
             key={`div-${region}-${d.row}`}
             className="col-span-full h-0.5 bg-foreground rounded-full"
-            style={{ gridRow: d.row + 1 }}
+            // +2: divider sits BELOW its content row (row index is 0-based, CSS grid rows are 1-based).
+            // TODO: generalize this layout model once result rows are introduced.
+            style={{ gridRow: d.row + 2 }}
           />
         ))}
     </div>

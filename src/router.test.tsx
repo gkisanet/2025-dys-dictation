@@ -12,6 +12,7 @@ function renderAt(path: string) {
     routeTree: router.routeTree,
     history: createMemoryHistory({ initialEntries: [path] }),
   });
+  // `as never` works around TanStack Router's registered-router narrowing in tests; runtime behavior is identical.
   render(<RouterProvider router={testRouter as never} />);
 }
 
