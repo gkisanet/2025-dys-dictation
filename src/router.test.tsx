@@ -23,6 +23,6 @@ describe('router', () => {
 
   it('renders Solve with the operation param', async () => {
     renderAt('/solve/add');
-    expect(await screen.findByText('풀이: add')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: '덧셈' })).toBeInTheDocument();
   });
 });
