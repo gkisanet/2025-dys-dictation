@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from '@tanstack/react-router';
 import type { Problem, Verbosity } from './steps/types';
 import { buildAddition } from './steps/buildAddition';
 import { buildSubtraction } from './steps/buildSubtraction';
@@ -19,12 +20,15 @@ export function SolveSession({
   stageId,
   operation,
   nextStageHref,
+  nextStageId,
 }: {
   problem: Problem;
   verbosity?: Verbosity;
   stageId?: string;
   operation?: string;
+  /** @deprecated pass nextStageId instead for SPA navigation */
   nextStageHref?: string;
+  nextStageId?: string;
 }) {
   const steps = useMemo(() => {
     const full = (() => {
@@ -82,7 +86,7 @@ export function SolveSession({
           <span>단계 {engine.index + 1} / {engine.total}</span>
           <span>⭐ {engine.score.correct}/{engine.score.total}</span>
         </div>
-        <ProgressBar value={progressValue} />
+        <ProgressBar value={progressValue} label="단계 진행도" />
       </div>
 
       {/* Worksheet */}
@@ -121,27 +125,36 @@ export function SolveSession({
               <ProgressBar
                 value={engine.score.total > 0 ? engine.score.correct / engine.score.total : 0}
                 color="var(--op-sub)"
+                label="학습 진행도"
               />
             </div>
             <p className="mt-3 text-sm font-semibold text-emerald-700">오늘도 잘했어요!</p>
-            <div className="mt-4 flex flex-wrap justify-center gap-2">
-              {nextStageHref && (
-                <a
-                  href={nextStageHref}
-                  className="inline-flex h-10 items-center rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white hover:bg-emerald-700 transition-colors"
+            {operation && (
+              <div className="mt-4 flex flex-wrap justify-center gap-2">
+                {(nextStageId || nextStageHref) && (
+                  <Link
+                    to="/solve/$operation/$stageId"
+                    params={{ operation, stageId: nextStageId ?? nextStageHref!.split('/').pop()! }}
+                    className="inline-flex h-10 items-center rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white hover:bg-emerald-700 transition-colors"
+                  >
+                    다음 단계 →
+                  </Link>
+                )}
+                <Link
+                  to="/learn/$operation"
+                  params={{ operation }}
+                  className="inline-flex h-10 items-center rounded-xl border px-4 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  다음 단계 →
-                </a>
-              )}
-              {operation && (
-                <a
-                  href={`/learn/${operation}`}
+                  단계 목록
+                </Link>
+                <Link
+                  to="/"
                   className="inline-flex h-10 items-center rounded-xl border px-4 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                 >
                   홈으로
-                </a>
-              )}
-            </div>
+                </Link>
+              </div>
+            )}
           </div>
         </Card>
       )}
@@ -158,22 +171,36 @@ export function SolveSession({
 
 /**
  * Wraps WorksheetRenderer so it never overflows the viewport width.
- * Uses CSS `transform: scale()` with `origin-top` to shrink it on small screens.
- * Falls back gracefully with `overflow-x: auto` so content is always reachable.
+ * Uses CSS `transform: scale()` with `origin-top center` to shrink wide
+ * content (e.g. the 18×24 multiplication tree) to fit narrow phones.
  */
 function WorksheetScaler({ children }: { children: React.ReactNode }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+
+  useEffect(() => {
+    const el = containerRef.current, inner = contentRef.current;
+    if (!el || !inner) return;
+    const measure = () => {
+      const cw = el.clientWidth, content = inner.scrollWidth;
+      setScale(content > cw ? cw / content : 1);
+    };
+    const obs = new ResizeObserver(measure);
+    obs.observe(el);
+    obs.observe(inner);
+    measure();
+    return () => obs.disconnect();
+  }, []);
+
   return (
-    <div className="w-full overflow-x-auto">
-      <div className="flex justify-center">
-        <div
-          style={{
-            transformOrigin: 'top center',
-            maxWidth: '100%',
-          }}
-          className="worksheet-scaler"
-        >
-          {children}
-        </div>
+    <div ref={containerRef} className="flex w-full justify-center overflow-hidden">
+      <div
+        ref={contentRef}
+        className="inline-block w-max"
+        style={{ transformOrigin: 'top center', transform: `scale(${scale})` }}
+      >
+        {children}
       </div>
     </div>
   );

@@ -50,7 +50,7 @@ export function Home() {
                       <span>마스터</span>
                       <span>{masteredCount} / {stages.length}</span>
                     </div>
-                    <ProgressBar value={ratio} color={accent} />
+                    <ProgressBar value={ratio} color={accent} label="학습 진행도" />
                   </div>
                 </CardContent>
               </Card>

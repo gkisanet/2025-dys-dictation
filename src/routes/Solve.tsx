@@ -31,9 +31,6 @@ export function Solve() {
   const stages = stagesFor(stage.operation as Operation);
   const currentIdx = stages.findIndex((s) => s.id === stage.id);
   const nextStage = currentIdx >= 0 && currentIdx + 1 < stages.length ? stages[currentIdx + 1] : null;
-  const nextStageHref = nextStage
-    ? `/solve/${nextStage.operation}/${nextStage.id}`
-    : undefined;
 
   return (
     <div className="flex flex-col gap-4">
@@ -55,7 +52,7 @@ export function Solve() {
         verbosity={stage.verbosity}
         stageId={stage.id}
         operation={operation}
-        nextStageHref={nextStageHref}
+        nextStageId={nextStage?.id}
       />
     </div>
   );

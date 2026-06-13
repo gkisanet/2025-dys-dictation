@@ -43,7 +43,7 @@ export function Progress() {
               <span className="font-semibold">{masteredCount} / {totalCount}</span>
             </div>
             <div className="mt-2">
-              <ProgressBar value={overallRatio} />
+              <ProgressBar value={overallRatio} label="학습 진행도" />
             </div>
           </CardContent>
         </Card>
