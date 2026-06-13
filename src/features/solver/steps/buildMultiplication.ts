@@ -1,5 +1,5 @@
 import type { BoardState, Cell, Highlight, Problem, Step } from './types';
-import { onesFirst, placeName, multiplyByDigit } from './mathColumns';
+import { onesFirst, multiplyByDigit } from './mathColumns';
 
 export function buildMultiplication(problem: Problem): Step[] {
   const [a, b] = problem.operands;
@@ -20,8 +20,6 @@ export function buildMultiplication(problem: Problem): Step[] {
   const mergeB = P2 * 10;
   const mergeAD = onesFirst(mergeA);    // e.g. [2,7]
   const mergeBD = onesFirst(mergeB);    // e.g. [0,6,3]
-  const finalD = onesFirst(final);       // e.g. [2,3,4]
-
   // Compute carry for the merge addition
   const mergeCols = Math.max(mergeAD.length, mergeBD.length);
   const mergeCarryIn: number[] = [];

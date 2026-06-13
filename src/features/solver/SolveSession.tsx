@@ -1,6 +1,8 @@
 import { useMemo } from 'react';
 import type { Problem } from './steps/types';
 import { buildAddition } from './steps/buildAddition';
+import { buildSubtraction } from './steps/buildSubtraction';
+import { buildMultiplication } from './steps/buildMultiplication';
 import { useSolveEngine } from './useSolveEngine';
 import { WorksheetRenderer } from './WorksheetRenderer';
 import { NarrationPanel } from './ui/NarrationPanel';
@@ -8,7 +10,13 @@ import { QuizPanel } from './ui/QuizPanel';
 import { Controls } from './ui/Controls';
 
 export function SolveSession({ problem }: { problem: Problem }) {
-  const steps = useMemo(() => buildAddition(problem), [problem]);
+  const steps = useMemo(() => {
+    switch (problem.operation) {
+      case 'add': return buildAddition(problem);
+      case 'sub': return buildSubtraction(problem);
+      case 'mul': return buildMultiplication(problem);
+    }
+  }, [problem]);
   const engine = useSolveEngine(steps);
   const { current } = engine;
 

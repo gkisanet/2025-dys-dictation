@@ -11,6 +11,7 @@ export type CellRole =
   | 'operator'
   | 'partial'
   | 'carry'
+  | 'borrow'
   | 'result'
   | 'zero-placeholder';
 
