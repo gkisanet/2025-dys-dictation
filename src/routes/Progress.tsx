@@ -8,8 +8,7 @@ const OP_TITLES: Record<Operation, string> = { add: '덧셈', sub: '뺄셈', mul
 const OPS: Operation[] = ['add', 'sub', 'mul'];
 
 export function Progress() {
-  const allStageIds = STAGES.map((s) => s.id);
-  const { data: progress, isLoading } = useAllProgress(allStageIds);
+  const { data: progress, isLoading } = useAllProgress();
 
   const masteredCount = progress
     ? Object.values(progress).filter((sp) => sp.mastered).length

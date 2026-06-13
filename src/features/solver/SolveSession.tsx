@@ -34,8 +34,8 @@ export function SolveSession({
   const { current } = engine;
 
   const recordAttempt = useRecordAttempt();
-  // Guard: record exactly once per run (fires again after reset because
-  // resetCountRef increments and the effect re-arms)
+  // Guard: record exactly once per run. After reset, engine.isDone cycles
+  // true→false→true which re-arms this effect naturally.
   const recordedRef = useRef(false);
   const resetCountRef = useRef(0);
 
@@ -64,7 +64,7 @@ export function SolveSession({
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [engine.isDone, stageId, resetCountRef.current]);
+  }, [engine.isDone, stageId]);
 
   return (
     <div className="flex flex-col gap-4">

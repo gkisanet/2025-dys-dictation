@@ -1,5 +1,6 @@
 import type { ProgressStore } from './types';
 import { createMemoryStore } from './memoryStore';
+import { createSqliteStore } from './sqliteStore';
 
 function isBrowserWithOPFS(): boolean {
   return (
@@ -31,9 +32,6 @@ export function _resetProgressStore(): void {
   _store = null;
 }
 
-// This import is top-level (so TypeScript can type-check it) but the
-// factory function is only *called* inside getProgressStore when in a real browser.
-import { createSqliteStore } from './sqliteStore';
 function getSqliteStoreFactory(): () => ProgressStore {
   return createSqliteStore;
 }

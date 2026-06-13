@@ -1,17 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { STAGES } from '@/features/curriculum/curriculum';
 import { getProgressStore } from './store';
 import { foldAll } from './progressLogic';
 import type { Attempt } from './types';
 
-export const PROGRESS_KEY = ['progress'] as const;
+const PROGRESS_KEY = ['progress'] as const;
+const ALL_STAGE_IDS = STAGES.map((s) => s.id);
 
-export function useAllProgress(stageIds: string[]) {
+/** Folded progress for EVERY stage, keyed by stage id. Components index the ones they need. */
+export function useAllProgress() {
   return useQuery({
     queryKey: PROGRESS_KEY,
-    queryFn: async () => {
-      const store = getProgressStore();
-      return foldAll(stageIds, await store.getAllAttempts());
-    },
+    queryFn: async () => foldAll(ALL_STAGE_IDS, await getProgressStore().getAllAttempts()),
   });
 }
 

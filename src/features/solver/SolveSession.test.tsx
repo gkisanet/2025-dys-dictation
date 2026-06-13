@@ -187,16 +187,12 @@ describe('SolveSession — records attempt on completion', () => {
     // Override getProgressStore to return our testStore
     vi.spyOn(storeModule, 'getProgressStore').mockReturnValue(testStore);
 
-    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-
     renderWithQuery(
-      <QueryClientProvider client={queryClient}>
-        <SolveSession
-          problem={{ operation: 'add', operands: [18, 24] }}
-          verbosity="answer"
-          stageId="add-5"
-        />
-      </QueryClientProvider>,
+      <SolveSession
+        problem={{ operation: 'add', operands: [18, 24] }}
+        verbosity="answer"
+        stageId="add-5"
+      />,
     );
 
     // Step 1 (setup): advance
@@ -232,16 +228,12 @@ describe('SolveSession — records attempt on completion', () => {
     const recordSpy = vi.spyOn(testStore, 'recordAttempt');
     vi.spyOn(storeModule, 'getProgressStore').mockReturnValue(testStore);
 
-    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-
     renderWithQuery(
-      <QueryClientProvider client={queryClient}>
-        <SolveSession
-          problem={{ operation: 'add', operands: [18, 24] }}
-          verbosity="answer"
-          stageId="add-5"
-        />
-      </QueryClientProvider>,
+      <SolveSession
+        problem={{ operation: 'add', operands: [18, 24] }}
+        verbosity="answer"
+        stageId="add-5"
+      />,
     );
 
     // First run: setup → answer → done

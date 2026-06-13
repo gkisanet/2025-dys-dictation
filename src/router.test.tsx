@@ -32,4 +32,9 @@ describe('router', () => {
     renderAt('/solve/add/add-1');
     expect(await screen.findByRole('heading', { name: '받아올림 없는 덧셈' })).toBeInTheDocument();
   });
+
+  it('renders Progress page at /progress', async () => {
+    renderAt('/progress');
+    expect(await screen.findByRole('heading', { name: '학습 진도' })).toBeInTheDocument();
+  });
 });

@@ -1,3 +1,4 @@
+import { asc } from 'drizzle-orm';
 import { getDb } from '@/db/client';
 import { attempts as attemptsTable } from '@/db/schema';
 import type { Attempt, ProgressStore } from './types';
@@ -20,7 +21,7 @@ export function createSqliteStore(): ProgressStore {
 
     async getAllAttempts(): Promise<Attempt[]> {
       const db = await getDb();
-      const rows = await db.select().from(attemptsTable);
+      const rows = await db.select().from(attemptsTable).orderBy(asc(attemptsTable.id));
       return rows.map((r) => ({
         id: r.id,
         stageId: r.stageId,

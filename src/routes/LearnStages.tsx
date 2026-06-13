@@ -9,8 +9,7 @@ const OP_TITLES: Record<string, string> = { add: '덧셈', sub: '뺄셈', mul: '
 export function LearnStages() {
   const { operation } = useParams({ from: '/learn/$operation' });
   const stages = stagesFor(operation as Operation);
-  const stageIds = stages.map((s) => s.id);
-  const { data: progress } = useAllProgress(stageIds);
+  const { data: progress } = useAllProgress();
 
   return (
     <main className="mx-auto max-w-md p-6">
