@@ -97,70 +97,91 @@ export function SolveSession({
       {/* Narration speech bubble */}
       <NarrationPanel text={current.narration} />
 
-      {/* Quiz panel — normal flow (no sticky); on-screen keypad means OS keyboard never opens */}
-      {current.quiz && (
-        <QuizPanel
-          quiz={current.quiz}
-          feedback={engine.feedback}
-          hint={engine.hint}
-          revealedAnswer={engine.revealedAnswer}
-          onSubmit={engine.submit}
-        />
-      )}
-
-      {/* Completion card */}
-      {engine.isDone && (
-        <Card className="overflow-hidden">
-          <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 p-4 text-center">
-            <div className="mb-2 text-3xl">🎉</div>
-            <p className="text-lg font-bold text-emerald-800">잘했어요!</p>
-            <p className="mt-1 text-sm text-emerald-700">
-              점수 {engine.score.correct}/{engine.score.total}
-            </p>
-            <div className="mx-auto mt-3 max-w-xs">
-              <ProgressBar
-                value={engine.score.total > 0 ? engine.score.correct / engine.score.total : 0}
-                color="var(--op-sub)"
-                label="학습 진행도"
-              />
-            </div>
-            <p className="mt-3 text-sm font-semibold text-emerald-700">오늘도 잘했어요!</p>
-            {operation && (
-              <div className="mt-4 flex flex-wrap justify-center gap-2">
-                {(nextStageId || nextStageHref) && (
-                  <Link
-                    to="/solve/$operation/$stageId"
-                    params={{ operation, stageId: nextStageId ?? nextStageHref!.split('/').pop()! }}
-                    className="inline-flex h-10 items-center rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white hover:bg-emerald-700 transition-colors"
-                  >
-                    다음 단계 →
-                  </Link>
-                )}
-                <Link
-                  to="/learn/$operation"
-                  params={{ operation }}
-                  className="inline-flex h-10 items-center rounded-xl border px-4 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  단계 목록
-                </Link>
-                <Link
-                  to="/"
-                  className="inline-flex h-10 items-center rounded-xl border px-4 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  홈으로
-                </Link>
+      {/* Bottom dock: stable min-height, always renders exactly one panel */}
+      <div className="min-h-[15rem]">
+        {engine.isDone ? (
+          /* Completion card with 다시 풀기 inside */
+          <Card className="overflow-hidden">
+            <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 p-4 text-center">
+              <div className="mb-2 text-3xl">🎉</div>
+              <p className="text-lg font-bold text-emerald-800">잘했어요!</p>
+              <p className="mt-1 text-sm text-emerald-700">
+                점수 {engine.score.correct}/{engine.score.total}
+              </p>
+              <div className="mx-auto mt-3 max-w-xs">
+                <ProgressBar
+                  value={engine.score.total > 0 ? engine.score.correct / engine.score.total : 0}
+                  color="var(--op-sub)"
+                  label="학습 진행도"
+                />
               </div>
-            )}
+              <p className="mt-3 text-sm font-semibold text-emerald-700">오늘도 잘했어요!</p>
+              <div className="mt-4 flex flex-wrap justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={engine.reset}
+                  className="inline-flex h-10 items-center rounded-xl border px-4 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  다시 풀기
+                </button>
+                {operation && (
+                  <>
+                    {(nextStageId || nextStageHref) && (
+                      <Link
+                        to="/solve/$operation/$stageId"
+                        params={{ operation, stageId: nextStageId ?? nextStageHref!.split('/').pop()! }}
+                        className="inline-flex h-10 items-center rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white hover:bg-emerald-700 transition-colors"
+                      >
+                        다음 단계 →
+                      </Link>
+                    )}
+                    <Link
+                      to="/learn/$operation"
+                      params={{ operation }}
+                      className="inline-flex h-10 items-center rounded-xl border px-4 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      단계 목록
+                    </Link>
+                    <Link
+                      to="/"
+                      className="inline-flex h-10 items-center rounded-xl border px-4 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      홈으로
+                    </Link>
+                  </>
+                )}
+              </div>
+            </div>
+          </Card>
+        ) : current.quiz ? (
+          /* Quiz panel + 다음 button (appears after correct answer) */
+          <div className="flex flex-col gap-2">
+            <QuizPanel
+              quiz={current.quiz}
+              feedback={engine.feedback}
+              hint={engine.hint}
+              revealedAnswer={engine.revealedAnswer}
+              onSubmit={engine.submit}
+            />
+            <Controls
+              canAdvance={engine.canAdvance}
+              isDone={engine.isDone}
+              onNext={engine.next}
+              onReset={engine.reset}
+            />
           </div>
-        </Card>
-      )}
-
-      <Controls
-        canAdvance={engine.canAdvance}
-        isDone={engine.isDone}
-        onNext={engine.next}
-        onReset={engine.reset}
-      />
+        ) : (
+          /* Narration/animation step: large 다음 button */
+          <div className="flex items-start pt-2">
+            <Controls
+              canAdvance={engine.canAdvance}
+              isDone={engine.isDone}
+              onNext={engine.next}
+              onReset={engine.reset}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }

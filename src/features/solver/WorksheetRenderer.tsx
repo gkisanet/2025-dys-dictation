@@ -1,4 +1,5 @@
 import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from 'framer-motion';
+import type { TargetAndTransition } from 'framer-motion';
 import type { BoardState, Cell, Highlight, Region } from './steps/types';
 
 const HL_CLASS: Record<NonNullable<Highlight>, string> = {
@@ -59,36 +60,51 @@ function RegionGrid({
   const dividerRows = board.dividers.filter((d) => d.region === region).map((d) => d.row);
   const { contentRow, dividerRow } = buildRowMap(rows, dividerRows);
 
-  const enter = reduced
-    ? { initial: false as const, animate: { opacity: 1 } }
-    : { initial: { opacity: 0, y: -18, scale: 0.7 }, animate: { opacity: 1, y: 0, scale: 1 } };
-
   return (
     <div
       data-region={region}
-      className="grid gap-x-1.5 gap-y-0.5 font-mono"
+      className="grid gap-x-1 gap-y-0 font-mono"
       style={{ gridTemplateColumns: `repeat(${maxPlace + 1}, 2.25rem)` }}
     >
       <AnimatePresence>
-        {visible.map((cell) => (
-          <motion.div
-            key={cell.id}
-            layout={!reduced}
-            layoutId={cell.layoutId}
-            {...enter}
-            transition={{ duration: 0.4, ease: [0.2, 0.8, 0.3, 1] }}
-            data-cell-id={cell.id}
-            data-role={cell.role}
-            data-superscript={cell.superscript ? 'true' : undefined}
-            className={cellClass(cell)}
-            style={{
-              gridColumnStart: maxPlace - cell.place + 1,
-              gridRowStart: contentRow.get(cell.row),
-            }}
-          >
-            {cell.value}
-          </motion.div>
-        ))}
+        {visible.map((cell) => {
+          let initial: boolean | TargetAndTransition;
+          let animate: TargetAndTransition;
+          if (reduced) {
+            initial = false;
+            animate = { opacity: 1 };
+          } else if (cell.enterFrom === 'left') {
+            initial = { opacity: 0, x: -36, y: -12 };
+            animate = { opacity: 1, x: 0, y: 0 };
+          } else if (cell.enterFrom === 'right') {
+            initial = { opacity: 0, x: 36, y: -12 };
+            animate = { opacity: 1, x: 0, y: 0 };
+          } else {
+            initial = { opacity: 0, y: -18, scale: 0.7 };
+            animate = { opacity: 1, y: 0, scale: 1 };
+          }
+
+          return (
+            <motion.div
+              key={cell.id}
+              layout={!reduced}
+              layoutId={cell.layoutId}
+              initial={initial}
+              animate={animate}
+              transition={{ duration: 0.4, ease: [0.2, 0.8, 0.3, 1] }}
+              data-cell-id={cell.id}
+              data-role={cell.role}
+              data-superscript={cell.superscript ? 'true' : undefined}
+              className={cellClass(cell)}
+              style={{
+                gridColumnStart: maxPlace - cell.place + 1,
+                gridRowStart: contentRow.get(cell.row),
+              }}
+            >
+              {cell.value}
+            </motion.div>
+          );
+        })}
       </AnimatePresence>
       {board.dividers
         .filter((d) => d.region === region && dividerRow.has(d.row))
@@ -111,13 +127,17 @@ export function WorksheetRenderer({ board }: { board: BoardState }) {
   const reduced = useReducedMotion() ?? false;
   const has = (r: Region) => board.regions.includes(r);
 
+  // Dim left/right when merge has any visible cell (focus moves to center)
+  const mergeHasVisible = board.cells.some(c => c.region === 'merge' && c.visible);
+  const branchDimClass = mergeHasVisible ? 'opacity-40 transition-opacity' : 'transition-opacity';
+
   return (
     <LayoutGroup>
-      <div className="flex flex-col items-center gap-3" data-testid="worksheet">
+      <div className="flex flex-col items-center gap-2" data-testid="worksheet">
         {has('top') && <RegionGrid region="top" board={board} reduced={reduced} />}
         {has('main') && <RegionGrid region="main" board={board} reduced={reduced} />}
         {(has('left') || has('right')) && (
-          <div className="flex items-start justify-center gap-4" data-region-row>
+          <div className={`flex items-start justify-center gap-3 ${branchDimClass}`} data-region-row>
             {has('left') && <RegionGrid region="left" board={board} reduced={reduced} />}
             {has('right') && <RegionGrid region="right" board={board} reduced={reduced} />}
           </div>

@@ -46,8 +46,8 @@ describe('Controls', () => {
     expect(onNext).toHaveBeenCalled();
   });
 
-  it('shows a restart button when done', () => {
-    render(<Controls canAdvance={false} isDone={true} onNext={() => {}} onReset={() => {}} />);
-    expect(screen.getByRole('button', { name: '다시 풀기' })).toBeInTheDocument();
+  it('renders nothing when done (다시 풀기 is now in the completion card)', () => {
+    const { container } = render(<Controls canAdvance={false} isDone={true} onNext={() => {}} onReset={() => {}} />);
+    expect(container.firstChild).toBeNull();
   });
 });

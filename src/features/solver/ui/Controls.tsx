@@ -7,14 +7,11 @@ interface ControlsProps {
   onReset: () => void;
 }
 
-export function Controls({ canAdvance, isDone, onNext, onReset }: ControlsProps) {
+export function Controls({ canAdvance, isDone, onNext, onReset: _onReset }: ControlsProps) {
+  if (isDone) return null;
   return (
-    <div className="flex justify-center gap-2">
-      {isDone ? (
-        <Button variant="ghost" onClick={onReset}>다시 풀기</Button>
-      ) : (
-        <Button onClick={onNext} disabled={!canAdvance}>다음</Button>
-      )}
+    <div className="flex justify-center">
+      <Button className="w-full" onClick={onNext} disabled={!canAdvance}>다음</Button>
     </div>
   );
 }
