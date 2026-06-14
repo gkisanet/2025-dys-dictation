@@ -1,22 +1,37 @@
 import { useEffect, useState } from 'react';
 import type { Quiz } from '../steps/types';
 import { NumberPad } from './NumberPad';
+import { Button } from '@/components/ui/button';
+import { Lightbulb } from 'lucide-react';
 
 interface QuizPanelProps {
-  quiz: Quiz;
+  quiz: Quiz | null;
   feedback: 'none' | 'correct' | 'wrong';
   hint: string | null;
   revealedAnswer: number | null;
   onSubmit: (value: number) => void;
+  narration: string;
+  canAdvance: boolean;
+  onNext: () => void;
 }
 
-export function QuizPanel({ quiz, feedback, hint, revealedAnswer, onSubmit }: QuizPanelProps) {
+export function QuizPanel({
+  quiz,
+  feedback,
+  hint,
+  revealedAnswer,
+  onSubmit,
+  narration,
+  canAdvance,
+  onNext,
+}: QuizPanelProps) {
   const [entry, setEntry] = useState('');
 
   // Clear on new checkpoint (prompt change).
-  useEffect(() => setEntry(''), [quiz.prompt]);
+  useEffect(() => setEntry(''), [quiz?.prompt]);
 
-  const locked = revealedAnswer !== null || feedback === 'correct';
+  const hasQuiz = quiz !== null;
+  const locked = !hasQuiz || revealedAnswer !== null || feedback === 'correct';
 
   const handleDigit = (d: string) => {
     if (locked) return;
@@ -35,29 +50,72 @@ export function QuizPanel({ quiz, feedback, hint, revealedAnswer, onSubmit }: Qu
   };
 
   return (
-    <div className="rounded-xl border-2 border-amber-200 bg-amber-50 p-3">
-      <p className="mb-2 font-bold text-amber-900">🧮 <span>{quiz.prompt}</span></p>
+    <div className="grid grid-cols-2 gap-3 rounded-xl border border-amber-200 bg-amber-50/70 p-3 text-amber-950">
+      {/* Left Column: quiz prompt, compact narration scrollbox, dynamic feedback, next button */}
+      <div className="flex flex-col justify-between gap-2 min-w-0">
+        <div className="flex flex-col gap-2">
+          {/* Prompt header & Answer input display */}
+          <div className="flex items-center justify-between gap-1.5">
+            <span className="text-sm font-bold text-amber-900 truncate">
+              {hasQuiz ? `🧮 ${quiz.prompt}` : '💡 단계 진행 중'}
+            </span>
+            {hasQuiz && (
+              <div
+                aria-label="답"
+                className="flex h-9 w-20 shrink-0 items-center justify-center rounded-lg border border-amber-300 bg-white text-center text-base font-bold text-amber-900 select-none"
+              >
+                {entry !== '' ? entry : <span className="text-amber-300">?</span>}
+              </div>
+            )}
+          </div>
 
-      {/* Read-only answer display */}
-      <div
-        aria-label="답"
-        className="mb-2 flex h-11 w-full items-center justify-center rounded-lg border-2 border-amber-300 bg-white text-center text-xl font-bold text-amber-900 select-none"
-      >
-        {entry !== '' ? entry : <span className="text-amber-300">?</span>}
+          {/* Mini Narration Box */}
+          <div className="flex items-start gap-1 rounded-lg bg-white/60 p-2 text-xs leading-relaxed text-amber-950 border border-amber-100 max-h-[90px] overflow-y-auto">
+            <Lightbulb className="mt-0.5 size-3.5 shrink-0 text-amber-500" aria-hidden="true" />
+            <span>{narration}</span>
+          </div>
+
+          {/* Micro Feedback line */}
+          <div className="min-h-[16px] text-xs">
+            {hasQuiz ? (
+              <>
+                {feedback === 'correct' && (
+                  <span className="font-semibold text-green-700">정답이에요! ✓</span>
+                )}
+                {feedback === 'wrong' && hint && (
+                  <span className="text-amber-800">💡 {hint}</span>
+                )}
+                {revealedAnswer !== null && (
+                  <span className="font-semibold text-red-600">정답: {revealedAnswer}</span>
+                )}
+              </>
+            ) : (
+              <span className="text-muted-foreground text-[11px]">설명을 읽고 다음 버튼을 누르세요.</span>
+            )}
+          </div>
+        </div>
+
+        {/* Action Controls: Next Button */}
+        <Button
+          className="w-full h-10 text-sm font-semibold"
+          onClick={onNext}
+          disabled={!canAdvance}
+        >
+          다음
+        </Button>
       </div>
 
-      <NumberPad
-        onDigit={handleDigit}
-        onDelete={handleDelete}
-        onSubmit={handleSubmit}
-        disabled={locked}
-      />
-
-      {feedback === 'correct' && <p className="mt-2 text-sm font-semibold text-green-700">정답이에요! ✓</p>}
-      {feedback === 'wrong' && hint && (
-        <p className="mt-2 text-sm text-amber-800">힌트: <span>{hint}</span></p>
-      )}
-      {revealedAnswer !== null && <p className="mt-2 text-sm font-semibold text-red-600">정답: {revealedAnswer}</p>}
+      {/* Right Column: Keypad (w-full width of the 50% grid cell) */}
+      <div className="border-l border-amber-200/50 pl-3 flex items-center justify-center">
+        <div className="w-full">
+          <NumberPad
+            onDigit={handleDigit}
+            onDelete={handleDelete}
+            onSubmit={handleSubmit}
+            disabled={locked}
+          />
+        </div>
+      </div>
     </div>
   );
 }

@@ -7,9 +7,7 @@ import { buildMultiplication } from './steps/buildMultiplication';
 import { applyVerbosityFor } from './steps/verbosity';
 import { useSolveEngine } from './useSolveEngine';
 import { WorksheetRenderer } from './WorksheetRenderer';
-import { NarrationPanel } from './ui/NarrationPanel';
 import { QuizPanel } from './ui/QuizPanel';
-import { Controls } from './ui/Controls';
 import { useRecordAttempt } from '@/features/progress/queries';
 import { ProgressBar } from '@/components/ui/progress-bar';
 import { Card } from '@/components/ui/card';
@@ -45,7 +43,7 @@ export function SolveSession({
 
   const recordAttempt = useRecordAttempt();
   // Guard: record exactly once per run. After reset, engine.isDone cycles
-  // true→false→true which re-arms this effect naturally.
+  // true→false→true which re-armed this effect naturally.
   const recordedRef = useRef(false);
   const resetCountRef = useRef(0);
 
@@ -94,11 +92,8 @@ export function SolveSession({
         <WorksheetRenderer board={current.board} />
       </div>
 
-      {/* Narration speech bubble */}
-      <NarrationPanel text={current.narration} />
-
       {/* Bottom dock: stable min-height, always renders exactly one panel */}
-      <div className="min-h-[12rem]">
+      <div className="min-h-[10rem]">
         {engine.isDone ? (
           /* Completion card with 다시 풀기 inside */
           <Card className="overflow-hidden">
@@ -153,33 +148,18 @@ export function SolveSession({
               </div>
             </div>
           </Card>
-        ) : current.quiz ? (
-          /* Quiz panel + 다음 button (appears after correct answer) */
-          <div className="flex flex-col gap-2">
-            <QuizPanel
-              quiz={current.quiz}
-              feedback={engine.feedback}
-              hint={engine.hint}
-              revealedAnswer={engine.revealedAnswer}
-              onSubmit={engine.submit}
-            />
-            <Controls
-              canAdvance={engine.canAdvance}
-              isDone={engine.isDone}
-              onNext={engine.next}
-              onReset={engine.reset}
-            />
-          </div>
         ) : (
-          /* Narration/animation step: large 다음 button */
-          <div className="flex items-start pt-2">
-            <Controls
-              canAdvance={engine.canAdvance}
-              isDone={engine.isDone}
-              onNext={engine.next}
-              onReset={engine.reset}
-            />
-          </div>
+          /* Quiz panel + narration + 다음 button combined side-by-side (remains present without active quiz to prevent layout shifting) */
+          <QuizPanel
+            quiz={current.quiz ?? null}
+            feedback={engine.feedback}
+            hint={engine.hint}
+            revealedAnswer={engine.revealedAnswer}
+            onSubmit={engine.submit}
+            narration={current.narration}
+            canAdvance={engine.canAdvance}
+            onNext={engine.next}
+          />
         )}
       </div>
     </div>

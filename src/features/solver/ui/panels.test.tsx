@@ -18,7 +18,18 @@ describe('NarrationPanel', () => {
 describe('QuizPanel', () => {
   it('submits the typed number via keypad', async () => {
     const onSubmit = vi.fn();
-    render(<QuizPanel quiz={quiz} feedback="none" hint={null} revealedAnswer={null} onSubmit={onSubmit} />);
+    render(
+      <QuizPanel
+        quiz={quiz}
+        feedback="none"
+        hint={null}
+        revealedAnswer={null}
+        onSubmit={onSubmit}
+        narration="일의 자리를 더해요"
+        canAdvance={false}
+        onNext={() => {}}
+      />
+    );
     // Enter "12" using the on-screen numeric keypad
     await userEvent.click(screen.getByRole('button', { name: '1' }));
     await userEvent.click(screen.getByRole('button', { name: '2' }));
@@ -28,10 +39,30 @@ describe('QuizPanel', () => {
 
   it('shows hint on wrong and the revealed answer when given', () => {
     const { rerender } = render(
-      <QuizPanel quiz={quiz} feedback="wrong" hint="h1" revealedAnswer={null} onSubmit={() => {}} />,
+      <QuizPanel
+        quiz={quiz}
+        feedback="wrong"
+        hint="h1"
+        revealedAnswer={null}
+        onSubmit={() => {}}
+        narration="일의 자리를 더해요"
+        canAdvance={false}
+        onNext={() => {}}
+      />,
     );
     expect(screen.getByText('h1')).toBeInTheDocument();
-    rerender(<QuizPanel quiz={quiz} feedback="wrong" hint="h2" revealedAnswer={12} onSubmit={() => {}} />);
+    rerender(
+      <QuizPanel
+        quiz={quiz}
+        feedback="wrong"
+        hint="h2"
+        revealedAnswer={12}
+        onSubmit={() => {}}
+        narration="일의 자리를 더해요"
+        canAdvance={false}
+        onNext={() => {}}
+      />
+    );
     expect(screen.getByText(/정답: 12/)).toBeInTheDocument();
   });
 });

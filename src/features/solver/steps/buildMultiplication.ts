@@ -73,7 +73,7 @@ function buildMul2x1(problem: Problem): Step[] {
     steps.push({
       id: `${i === 0 ? 'ones' : 'tens'}-ask`,
       kind: 'digit-op',
-      narration: `${aD[i]}의 자리: ${aD[i]} × ${b}${carryPromptPart} = ${colValue}.`,
+      narration: `${aD[i]}의 자리를 계산해요: ${aD[i]} × ${b}${carryPromptPart}.`,
       board: boardFrom(shown, askHi),
       quiz: {
         prompt,
@@ -213,7 +213,7 @@ function buildMultiplyByTen(problem: Problem): Step[] {
     steps.push({
       id: `${i === 0 ? 'ones' : 'tens'}-ask`,
       kind: 'digit-op',
-      narration: `${aD[i]}의 자리: ${aD[i]} × ${tensB}${carryPromptPart} = ${colValue}.`,
+      narration: `${aD[i]}의 자리를 계산해요: ${aD[i]} × ${tensB}${carryPromptPart}.`,
       board: boardFrom(shown, askHi),
       quiz: {
         prompt,
@@ -412,7 +412,7 @@ export function buildMultiplication(problem: Problem): Step[] {
   // 2. decompose
   steps.push({
     id: 'decompose', kind: 'decompose',
-    narration: `${b}는 ${tensB * 10}과 ${onesB}가 합쳐진 수. ${a}×${onesB} 와 ${a}×${tensB * 10} 으로 나눠 곱한 뒤 더해요.`,
+    narration: `${b}는 ${tensB * 10}과 어떤 수가 합쳐진 수인지 알아맞춰 봐요. 그 후 나눠서 곱한 뒤 더할 거예요.`,
     board: boardFrom(shown, { 'top-b-0': 'now', 'top-b-1': 'now' }),
     quiz: { prompt: `${b} = ${tensB * 10} + ?`, answer: onesB, hints: [`${b}의 일의 자리를 생각해보세요.`, `${b} - ${tensB * 10} = ?`] },
   });
@@ -451,7 +451,7 @@ export function buildMultiplication(problem: Problem): Step[] {
     steps.push({
       id: `left-${i === 0 ? 'ones' : 'tens'}-ask`,
       kind: 'digit-op',
-      narration: `왼쪽 ${i === 0 ? '일' : '십'}의 자리: ${aD[i]} × ${onesB}${carryPromptPart} = ${colValue}.`,
+      narration: `왼쪽 ${i === 0 ? '일' : '십'}의 자리를 곱해요: ${aD[i]} × ${onesB}${carryPromptPart}.`,
       board: boardFrom(shown, askHi),
       quiz: {
         prompt,
@@ -511,7 +511,7 @@ export function buildMultiplication(problem: Problem): Step[] {
     steps.push({
       id: `right-${i === 0 ? 'ones' : 'tens'}-ask`,
       kind: 'digit-op',
-      narration: `오른쪽 ${i === 0 ? '일' : '십'}의 자리: ${aD[i]} × ${tensB}${carryPromptPart} = ${colValue}.`,
+      narration: `오른쪽 ${i === 0 ? '일' : '십'}의 자리를 곱해요: ${aD[i]} × ${tensB}${carryPromptPart}.`,
       board: boardFrom(shown, askHi),
       quiz: {
         prompt,
