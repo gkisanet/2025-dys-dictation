@@ -26,7 +26,7 @@ function BottomNav() {
               key={to}
               to={to}
               className={cn(
-                'flex flex-1 flex-col items-center justify-center gap-1 py-2.5 text-xs font-medium transition-colors',
+                'flex flex-1 flex-col items-center justify-center gap-1 py-1.5 text-xs font-medium transition-colors',
                 active ? 'text-primary' : 'text-muted-foreground',
               )}
             >
@@ -45,7 +45,7 @@ export function AppShell() {
     <div className="flex min-h-full flex-col">
       {/* Top header */}
       <header className="sticky top-0 z-40 border-b bg-card/95 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-screen-sm items-center justify-between px-4 py-3">
+        <div className="mx-auto flex max-w-screen-sm items-center justify-between px-4 py-2">
           <Link to="/" className="flex items-center gap-2 font-bold text-primary">
             <Brain className="size-5" />
             <span>암산 학습</span>
@@ -63,7 +63,7 @@ export function AppShell() {
       </header>
 
       {/* Page content */}
-      <main className="mx-auto w-full max-w-screen-sm flex-1 px-4 pb-24 pt-4 sm:pb-8">
+      <main className="mx-auto w-full max-w-screen-sm flex-1 px-4 pb-20 pt-2.5 sm:pb-8">
         <Outlet />
       </main>
 

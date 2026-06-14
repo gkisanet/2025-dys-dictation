@@ -77,18 +77,17 @@ export function SolveSession({
   const progressValue = engine.total > 0 ? (engine.index + 1) / engine.total : 0;
 
   return (
-    <div className="flex flex-col gap-3">
-      {/* Step progress + score chip */}
-      <div className="flex flex-col gap-1.5">
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span>단계 {engine.index + 1} / {engine.total}</span>
-          <span>⭐ {engine.score.correct}/{engine.score.total}</span>
+    <div className="flex flex-col gap-2">
+      {/* Step progress + score chip — horizontal inline layout */}
+      <div className="flex items-center justify-between gap-3 text-[11px] text-muted-foreground">
+        <span className="shrink-0 font-medium">단계 {engine.index + 1}/{engine.total} (⭐ {engine.score.correct})</span>
+        <div className="flex-1">
+          <ProgressBar value={progressValue} label="단계 진행도" />
         </div>
-        <ProgressBar value={progressValue} label="단계 진행도" />
       </div>
 
-      {/* Worksheet — plain flex container, no transform/scale so Framer Motion layout animations work */}
-      <div className="flex min-h-[7rem] items-center justify-center overflow-x-auto py-1">
+      {/* Worksheet — compact height */}
+      <div className="flex min-h-[5.5rem] items-center justify-center overflow-x-auto py-1">
         <WorksheetRenderer board={current.board} />
       </div>
 

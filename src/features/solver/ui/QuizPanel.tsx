@@ -50,19 +50,19 @@ export function QuizPanel({
   };
 
   return (
-    <div className="grid grid-cols-2 gap-3 rounded-xl border border-amber-200 bg-amber-50/70 p-3 text-amber-950">
+    <div className="grid grid-cols-[2fr_1fr] gap-2 rounded-xl border border-amber-200 bg-amber-50/70 p-2 text-amber-950">
       {/* Left Column: quiz prompt, compact narration scrollbox, dynamic feedback, next button */}
-      <div className="flex flex-col justify-between gap-2 min-w-0">
-        <div className="flex flex-col gap-2">
+      <div className="flex flex-col justify-between gap-1.5 min-w-0">
+        <div className="flex flex-col gap-1.5">
           {/* Prompt header & Answer input display */}
-          <div className="flex items-center justify-between gap-1.5">
-            <span className="text-sm font-bold text-amber-900 truncate">
+          <div className="flex items-center justify-between gap-1">
+            <span className="text-xs font-bold text-amber-900 truncate">
               {hasQuiz ? `🧮 ${quiz.prompt}` : '💡 단계 진행 중'}
             </span>
             {hasQuiz && (
               <div
                 aria-label="답"
-                className="flex h-9 w-20 shrink-0 items-center justify-center rounded-lg border border-amber-300 bg-white text-center text-base font-bold text-amber-900 select-none"
+                className="flex h-8 w-18 shrink-0 items-center justify-center rounded-lg border border-amber-300 bg-white text-center text-sm font-bold text-amber-900 select-none"
               >
                 {entry !== '' ? entry : <span className="text-amber-300">?</span>}
               </div>
@@ -70,13 +70,13 @@ export function QuizPanel({
           </div>
 
           {/* Mini Narration Box */}
-          <div className="flex items-start gap-1 rounded-lg bg-white/60 p-2 text-xs leading-relaxed text-amber-950 border border-amber-100 max-h-[90px] overflow-y-auto">
-            <Lightbulb className="mt-0.5 size-3.5 shrink-0 text-amber-500" aria-hidden="true" />
+          <div className="flex items-start gap-1 rounded-lg bg-white/60 p-1.5 text-[11px] leading-relaxed text-amber-950 border border-amber-100 max-h-[75px] overflow-y-auto">
+            <Lightbulb className="mt-0.5 size-3 shrink-0 text-amber-500" aria-hidden="true" />
             <span>{narration}</span>
           </div>
 
           {/* Micro Feedback line */}
-          <div className="min-h-[16px] text-xs">
+          <div className="min-h-[14px] text-[11px]">
             {hasQuiz ? (
               <>
                 {feedback === 'correct' && (
@@ -90,14 +90,14 @@ export function QuizPanel({
                 )}
               </>
             ) : (
-              <span className="text-muted-foreground text-[11px]">설명을 읽고 다음 버튼을 누르세요.</span>
+              <span className="text-muted-foreground text-[10px]">설명을 읽고 다음 버튼을 누르세요.</span>
             )}
           </div>
         </div>
 
         {/* Action Controls: Next Button */}
         <Button
-          className="w-full h-10 text-sm font-semibold"
+          className="w-full h-9 text-xs font-semibold"
           onClick={onNext}
           disabled={!canAdvance}
         >
@@ -105,8 +105,8 @@ export function QuizPanel({
         </Button>
       </div>
 
-      {/* Right Column: Keypad (w-full width of the 50% grid cell) */}
-      <div className="border-l border-amber-200/50 pl-3 flex items-center justify-center">
+      {/* Right Column: Keypad (w-full width of the 1/3 grid cell) */}
+      <div className="border-l border-amber-200/50 pl-2 flex items-center justify-center">
         <div className="w-full">
           <NumberPad
             onDigit={handleDigit}
